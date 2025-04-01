@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCode GH Editor v2</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #7B68EE;
+            --primary-hover: #6A5ACD;
+            --secondary-color: #6C757D;
+            --accent-color: #FF6B6B;
+            --bg-color: #F8F9FC;
+            --card-bg: #FFFFFF;
+            --border-color: #E4E7ED;
+            --text-color: #374151;
+            --text-muted: #6B7280;
+            --success-color: #10B981;
+            --warning-color: #FBBF24;
+            --danger-color: #EF4444;
+            --border-radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition: all 0.2s ease;
+        }
+
+        body {
+            padding: 20px;
+            background-color: var(--bg-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .btn {
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: #1F2937;
+        }
+
+        #code-editor {
+            height: 50vh; /* Reduced height */
+            min-height: 300px; /* Reduced minimum height */
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            font-family: 'JetBrains Mono', monospace;
+            border: none;
+        }
+
+        .card {
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .param-card {
+            margin-bottom: 1rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .param-card:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .param-card .card-body {
+            padding: 1.25rem;
+        }
+
+        .param-card .card-title {
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .remove-btn {
+            margin-left: auto;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .remove-btn:hover {
+            color: var(--danger-color);
+        }
+
+        #status-message {
+            margin-top: 1rem;
+            display: none;
+            word-wrap: break-word;
+            border-radius: var(--border-radius);
+        }
+
+        .section-header {
+            margin-top: 1.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: #1F2937;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-header i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.375rem;
+            color: #4B5563;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(123, 104, 238, 0.25);
+        }
+
+        .form-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-logo {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-right: 0.75rem;
+        }
+
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #inputs-list, #outputs-list {
+            height: 60vh; /* Use viewport height percentage */
+            min-height: 300px; /* Minimum height */
+            overflow-y: auto;
+            padding-right: 10px; /* Space for scrollbar */
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem; /* Replaces margin on individual cards */
+        }
+
+        /* Style scrollbar for webkit browsers */
+        #inputs-list::-webkit-scrollbar, #outputs-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        #inputs-list::-webkit-scrollbar-track, #outputs-list::-webkit-scrollbar-track {
+            background: var(--bg-color);
+            border-radius: 4px;
+        }
+        #inputs-list::-webkit-scrollbar-thumb, #outputs-list::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 4px;
+            border: 2px solid var(--bg-color);
+        }
+        #inputs-list::-webkit-scrollbar-thumb:hover, #outputs-list::-webkit-scrollbar-thumb:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .param-card {
+            /* Remove bottom margin as it's now on the container */
+            /* margin-bottom: 1rem; */ 
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* AI Loading Animation */
+        @keyframes pulseCardShadow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(123, 104, 238, 0.5); /* Start with slightly more visible shadow */
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(123, 104, 238, 0); /* Expand shadow outwards */
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(123, 104, 238, 0);
+            }
+        }
+
+        .ai-loading-pulse {
+            /* Apply animation to the card */
+            animation: pulseCardShadow 1.5s infinite;
+            /* Optionally enhance border during loading */
+            border-color: var(--primary-color) !important; /* Use !important to override default card border if needed */
+        }
+
+        /* AI Speech Bubble Styles */
+        .ai-icon-container {
+            position: relative; /* Anchor for the absolute positioned bubble */
+            display: inline-block; /* Keep it inline but allow positioning */
+            vertical-align: middle; /* Align icon nicely with text */
+        }
+
+        .ai-speech-bubble {
+            position: absolute;
+            bottom: 100%; /* Position above the icon */
+            left: 50%; /* Center horizontally relative to the icon */
+            transform: translateX(-50%) translateY(-8px); /* Adjust centering and add small gap */
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 0.85rem; /* Slightly larger padding */
+            border-radius: var(--border-radius);
+            font-size: 0.8rem; /* Slightly larger font */
+            font-weight: 500;
+            /* white-space: nowrap; */ /* REMOVED to allow wrapping */
+            max-width: 250px; /* Add max-width for longer messages */
+            text-align: center; /* Center text if it wraps */
+            box-shadow: var(--shadow); /* Slightly larger shadow */
+            opacity: 0; /* Hidden by default */
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+            z-index: 1060; /* Increase z-index significantly (Bootstrap modals are ~1050) */
+        }
+
+        /* Triangle pointer for the bubble */
+        .ai-speech-bubble::after {
+            content: '';
+            position: absolute;
+            top: 100%; /* Position below the bubble */
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--primary-color) transparent transparent transparent; /* Points down */
+            /* Adjust position slightly if needed due to padding change */
+            /* top: calc(100% - 1px); */ /* Example adjustment if needed */
+        }
+
+        /* Style for when the bubble is active/visible */
+        .ai-speech-bubble.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-12px); /* Slight upward movement when appearing */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="app-header">
+            <i class="fas fa-code-branch app-logo"></i>
+            <h1 class="mb-0">VibeCode Grasshopper Editor</h1>
+        </div>
+
+        <div class="row mb-3 justify-content-center">
+            <!-- Top Row Card 2: Configuration -->
+            <div class="col-md-6">
+                <div class="card h-100" style="background-color: #f8f9fa;">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3"><i class="fas fa-cog me-2 text-primary"></i>Configuration</h5>
+                        <div class="mb-2">
+                            <label for="targetGuid" class="form-label mb-1">Target Component GUID</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-fingerprint"></i></span>
+                                <input type="text" class="form-control form-control-sm" id="targetGuid" placeholder="Paste GUID">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" id="fetch-from-gh-btn" title="Fetch data from selected GH component">
+                                    <i class="fas fa-sync-alt"></i> Fetch
+                                </button>
+                    </div>
+                    </div>
+                        <div>
+                            <label for="apiKey" class="form-label mb-1">AI API Key (Optional)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control form-control-sm" id="apiKey" placeholder="Enter AI Key">
+                        </div>
+                        </div>
+                        <div class="form-check form-switch mt-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="autoFetchSwitch">
+                            <label class="form-check-label small" for="autoFetchSwitch">Auto-Fetch Selected Component</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Top Row Card 3: Testing -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="card-title mb-1"><i class="fas fa-vial me-2 text-warning"></i>Testing</h5>
+                            <span class="text-muted small">Load sample data into the editor.</span>
+                        </div>
+                        <button class="btn btn-outline-warning btn-sm" id="load-test-data-btn">
+                            <i class="fas fa-flask me-1"></i> Load Test Data
+                    </button>
+                                </div>
+                                </div>
+                                </div>
+                        </div>
+
+        <div class="row g-4">
+            <!-- Column 1: Inputs -->
+            <div class="col-lg-3">
+                <div class="sticky-top" style="top: 20px;">
+                    <h3 class="section-header">
+                        <i class="fas fa-arrow-right"></i>Input Parameters
+                    </h3>
+                    <div id="inputs-list" style="background-color: #f1f3f5; border-top: 1px solid #dee2e6;">
+                        <!-- Input parameters will be added here -->
+                        </div>
+                    <button class="btn btn-success btn-sm mb-4 btn-icon" id="add-input-btn">
+                        <i class="fas fa-plus"></i> Add Input
+                     </button>
+                                </div>
+                                </div>
+
+            <!-- Column 2: Code Editor & AI -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-code text-primary me-2"></i>Code Editor
+                        </h3>
+                        </div>
+                    <div class="card-body p-0">
+                <div id="code-editor"># Python code for the Grasshopper component
+# Access inputs using their names if defined, e.g.:
+# my_point = point_input
+# numbers = list_of_numbers
+#
+# Or access by index (less robust if params change):
+# x = IN[0]
+#
+# Assign results to output parameters by name:
+# output = some_result
+# curves_out = generated_curves
+
+print("VibeCode Editor Ready")
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h3 class="card-title mb-0">
+                            <!-- Add a container for the icon and bubble -->
+                            <span class="ai-icon-container me-2" style="position: relative; display: inline-block;">
+                                <i class="fas fa-robot text-primary"></i>
+                                <!-- The speech bubble (initially hidden) -->
+                                <span class="ai-speech-bubble" id="ai-summary-bubble">AI Summary!</span>
+                            </span>
+                            AI Assistant
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                 <div class="mb-3">
+                    <label for="aiPrompt" class="form-label">Prompt</label>
+                    <textarea class="form-control" id="aiPrompt" rows="3" placeholder="e.g., 'Create a script that takes a list of points and outputs their Z values.'"></textarea>
+                </div>
+                 <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="aiGenerateParams">
+                    <label class="form-check-label" for="aiGenerateParams">
+                        Generate/Update Input/Output Parameters based on Prompt
+                    </label>
+                </div>
+                        <button class="btn btn-warning btn-icon me-2" id="send-to-gh-btn">
+                            <i class="fas fa-paper-plane"></i> Send to GH
+                </button>
+                        <button class="btn btn-primary btn-icon" id="ai-submit-btn">
+                            <i class="fas fa-magic"></i> Generate Code with AI
+                </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: Outputs & Send -->
+            <div class="col-lg-3">
+                <div class="sticky-top" style="top: 20px;">
+                    <h3 class="section-header">
+                        <i class="fas fa-arrow-left"></i>Output Parameters
+                    </h3>
+                    <div id="outputs-list" style="background-color: #f1f3f5; border-top: 1px solid #dee2e6;">
+                        <div class="card param-card" data-param-type="output" data-param-name="output">
+                            <div class="card-body">
+                                <h5 class="card-title">Default Output: 'output'</h5>
+                                <div class="mb-2">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control form-control-sm param-name" value="output" readonly>
+                                    <div class="form-text">The default 'output' param is required. Edit its description below.</div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Description</label>
+                                    <input type="text" class="form-control form-control-sm param-desc" placeholder="Description for 'output'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success btn-sm mb-4 btn-icon" id="add-output-btn">
+                        <i class="fas fa-plus"></i> Add Output
+                </button>
+
+                <div id="status-message" class="alert mt-3" role="alert">
+                        <!-- Status messages will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.33.0/ace.js" integrity="sha512-URPfGhr6DbWFJqw32VeD4h9c1Q8CMWJGtU34IOEbOlEJpH5PIhTvD7PL4dfcWBs5731pYSc0mtW+nlfLdHmueQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Ace Editor Setup ---
+            const editor = ace.edit("code-editor");
+            editor.setTheme("ace/theme/tomorrow");
+            editor.session.setMode("ace/mode/python");
+            editor.setOptions({
+                fontSize: "14px",
+                useWorker: false,
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                enableSnippets: true,
+                tabSize: 4,
+                useSoftTabs: true,
+                showPrintMargin: false,
+                highlightActiveLine: true,
+                showGutter: true,
+                showLineNumbers: true,
+            });
+
+            // --- DOM Elements ---
+            const inputsList = document.getElementById('inputs-list');
+            const outputsList = document.getElementById('outputs-list');
+            const addInputBtn = document.getElementById('add-input-btn');
+            const addOutputBtn = document.getElementById('add-output-btn');
+            const sendToGhBtn = document.getElementById('send-to-gh-btn');
+            const aiSubmitBtn = document.getElementById('ai-submit-btn');
+            const apiKeyInput = document.getElementById('apiKey');
+            const targetGuidInput = document.getElementById('targetGuid');
+            const aiPromptInput = document.getElementById('aiPrompt');
+            const aiGenerateParamsCheckbox = document.getElementById('aiGenerateParams');
+            const statusMessage = document.getElementById('status-message');
+            const loadTestDataBtn = document.getElementById('load-test-data-btn');
+            const fetchFromGhBtn = document.getElementById('fetch-from-gh-btn');
+            const autoFetchSwitch = document.getElementById('autoFetchSwitch');
+            const aiSummaryBubble = document.getElementById('ai-summary-bubble');
+
+            const ghServerUrl = 'http://127.0.0.1:9998'; // Correct port for the Python server
+            let autoFetchIntervalId = null; // To store the interval ID
+            const AUTO_FETCH_INTERVAL = 2000; // Check every 2 seconds
+
+            // --- Parameter Card Creation Functions ---
+
+            // Helper function to update card titles dynamically
+            function updateCardTitle(cardElement, paramType, newName) {
+                const titleElement = cardElement.querySelector('.card-title');
+                if (titleElement) {
+                    const iconClass = paramType === 'input' ? 'fas fa-arrow-right text-success' : 'fas fa-arrow-left text-primary';
+                    const typeLabel = paramType === 'input' ? 'Input' : 'Output';
+                    const displayName = newName.trim() ? `: '${newName.trim()}'` : ' (Unnamed)';
+                    titleElement.innerHTML = `<i class="${iconClass} me-2"></i>${typeLabel}${displayName}`;
+                }
+            }
+
+            function createInputCard(inputDef = {}) {
+                const { name = '', description = '', typehint = 'str', access = 'list', optional = true } = inputDef;
+                const cardId = `param-in-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                const card = document.createElement('div');
+                card.className = 'card param-card mb-3'; // Added mb-3 back for spacing within the list
+                card.id = cardId;
+                card.dataset.paramType = 'input';
+
+                // Initial title is set here, will be updated by the function call below
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="card-title mb-0">Input Parameter</h5>
+                            <button type="button" class="btn-close remove-btn" aria-label="Remove Input" data-target="${cardId}"></button>
+                        </div>
+                        <div class="mb-2">
+                            <label for="${cardId}-name" class="form-label">Name</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                            <input type="text" id="${cardId}-name" class="form-control form-control-sm param-name" value="${name}" placeholder="e.g., points">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label for="${cardId}-desc" class="form-label">Description</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                            <input type="text" id="${cardId}-desc" class="form-control form-control-sm param-desc" value="${description}" placeholder="Parameter description">
+                        </div>
+                        </div>
+                        <div class="row gx-2">
+                            <div class="col-md-6 mb-2">
+                                <label for="${cardId}-typehint" class="form-label">Type Hint</label>
+                                <select id="${cardId}-typehint" class="form-select form-select-sm param-typehint">
+                                    <option value="generic" ${typehint === 'generic' || typehint === '' ? 'selected' : ''}>Generic Object</option>
+                                    <option value="str" ${typehint === 'str' ? 'selected' : ''}>String</option>
+                                    <option value="int" ${typehint === 'int' ? 'selected' : ''}>Integer</option>
+                                    <option value="float" ${typehint === 'float' ? 'selected' : ''}>Number/Float</option>
+                                    <option value="bool" ${typehint === 'bool' ? 'selected' : ''}>Boolean</option>
+                                    <option value="guid" ${typehint === 'guid' ? 'selected' : ''}>Guid</option>
+                                    <option value="point" ${typehint === 'point' ? 'selected' : ''}>Point</option>
+                                    <option value="vector" ${typehint === 'vector' ? 'selected' : ''}>Vector</option>
+                                    <option value="curve" ${typehint === 'curve' ? 'selected' : ''}>Curve</option>
+                                    <option value="surface" ${typehint === 'surface' ? 'selected' : ''}>Surface</option>
+                                    <option value="brep" ${typehint === 'brep' ? 'selected' : ''}>Brep</option>
+                                    <option value="mesh" ${typehint === 'mesh' ? 'selected' : ''}>Mesh</option>
+                                    </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label for="${cardId}-access" class="form-label">Access</label>
+                                <select id="${cardId}-access" class="form-select form-select-sm param-access">
+                                    <option value="item" ${access === 'item' ? 'selected' : ''}>Item</option>
+                                    <option value="list" ${access === 'list' ? 'selected' : ''}>List</option>
+                                    <option value="tree" ${access === 'tree' ? 'selected' : ''}>Tree</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-check mt-1">
+                             <input type="checkbox" id="${cardId}-optional" class="form-check-input param-optional" ${optional ? 'checked' : ''}>
+                             <label for="${cardId}-optional" class="form-check-label">Optional</label>
+                        </div>
+                    </div>`;
+                inputsList.appendChild(card);
+
+                // Set initial title
+                updateCardTitle(card, 'input', name);
+
+                // Add listener to update title when name changes
+                const nameInput = card.querySelector('.param-name');
+                if (nameInput) {
+                    nameInput.addEventListener('input', (event) => {
+                        updateCardTitle(card, 'input', event.target.value);
+                    });
+                }
+
+                // Ensure the new card is visible if the list is scrolled
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Add a subtle animation
+                setTimeout(() => {
+                    card.style.opacity = "0";
+                    card.style.transform = "translateY(20px)";
+                    card.style.transition = "all 0.3s ease";
+                    requestAnimationFrame(() => {
+                        card.style.opacity = "1";
+                        card.style.transform = "translateY(0)";
+                    });
+                }, 0);
+            }
+
+            function createOutputCard(outputDef = {}) {
+                 const { name = '', description = '' } = outputDef;
+                 if (name.toLowerCase() === 'output') {
+                     console.warn("Attempted to add another parameter named 'output'. Skipping.");
+                     // Optionally update description of existing default output here if needed
+                     const defaultOutputCard = outputsList.querySelector('.param-card[data-param-name="output"]');
+                     if (defaultOutputCard) {
+                         const descInput = defaultOutputCard.querySelector('.param-desc');
+                         if (descInput && description) {
+                             descInput.value = description;
+                         }
+                     }
+                     return; // Don't create a new card for 'output'
+                 }
+                const cardId = `param-out-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                const card = document.createElement('div');
+                card.className = 'card param-card mb-3'; // Added mb-3 back
+                card.id = cardId;
+                card.dataset.paramType = 'output';
+                card.dataset.paramName = name; // Store initial name for reference if needed
+
+                // Initial title is set here, will be updated by the function call below
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="card-title mb-0">Output Parameter</h5>
+                            <button type="button" class="btn-close remove-btn" aria-label="Remove Output" data-target="${cardId}"></button>
+                        </div>
+                        <div class="mb-2">
+                             <label for="${cardId}-name" class="form-label">Name</label>
+                             <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                             <input type="text" id="${cardId}-name" class="form-control form-control-sm param-name" value="${name}" placeholder="e.g., resultCurves">
+                             </div>
+                        </div>
+                        <div class="mb-2">
+                             <label for="${cardId}-desc" class="form-label">Description</label>
+                             <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                             <input type="text" id="${cardId}-desc" class="form-control form-control-sm param-desc" value="${description}" placeholder="What this output provides">
+                             </div>
+                        </div>
+                    </div>`;
+
+                outputsList.appendChild(card);
+
+                // Set initial title
+                updateCardTitle(card, 'output', name);
+
+                // Add listener to update title when name changes
+                const nameInput = card.querySelector('.param-name');
+                if (nameInput) {
+                    nameInput.addEventListener('input', (event) => {
+                        updateCardTitle(card, 'output', event.target.value);
+                        // Update data-param-name attribute as well if needed elsewhere
+                        card.dataset.paramName = event.target.value.trim();
+                    });
+                }
+
+                // Ensure the new card is visible if the list is scrolled
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Add a subtle animation
+                setTimeout(() => {
+                    card.style.opacity = "0";
+                    card.style.transform = "translateY(20px)";
+                    card.style.transition = "all 0.3s ease";
+                    requestAnimationFrame(() => {
+                        card.style.opacity = "1";
+                        card.style.transform = "translateY(0)";
+                    });
+                }, 0);
+            }
+
+            // --- Event Listeners ---
+            addInputBtn.addEventListener('click', () => {
+                createInputCard();
+                addInputBtn.classList.add('animate__animated', 'animate__pulse');
+                setTimeout(() => {
+                    addInputBtn.classList.remove('animate__animated', 'animate__pulse');
+                }, 500);
+            });
+            
+            addOutputBtn.addEventListener('click', () => {
+                createOutputCard();
+                addOutputBtn.classList.add('animate__animated', 'animate__pulse');
+                setTimeout(() => {
+                    addOutputBtn.classList.remove('animate__animated', 'animate__pulse');
+                }, 500);
+            });
+
+            // Use event delegation for remove buttons
+            document.addEventListener('click', (event) => {
+                if (event.target.matches('.remove-btn')) {
+                    const targetId = event.target.dataset.target;
+                    const cardToRemove = document.getElementById(targetId);
+                    if (cardToRemove) {
+                        cardToRemove.style.opacity = "0";
+                        cardToRemove.style.transform = "translateY(20px)";
+                        setTimeout(() => {
+                        cardToRemove.remove();
+                        }, 300);
+                    } else {
+                         console.warn(`Could not find card with ID: ${targetId} to remove.`);
+                    }
+                }
+            });
+
+            sendToGhBtn.addEventListener('click', () => {
+                sendToGhBtn.disabled = true;
+                sendToGhBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                sendDataToGrasshopper();
+            });
+            
+            aiSubmitBtn.addEventListener('click', () => {
+                aiSubmitBtn.disabled = true;
+                aiSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                handleAISubmit();
+            });
+
+            // Test Data Button Listener
+            loadTestDataBtn.addEventListener('click', loadTestData);
+
+            // Fetch from GH Button Listener
+            fetchFromGhBtn.addEventListener('click', () => {
+                fetchFromGhBtn.disabled = true;
+                fetchFromGhBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                fetchSelectedComponentData();
+            });
+
+            // Auto-Fetch Switch Listener
+            autoFetchSwitch.addEventListener('change', (event) => {
+                const isEnabled = event.target.checked;
+                if (isEnabled) {
+                    startAutoFetch();
+                } else {
+                    stopAutoFetch();
+                }
+                // Save preference to localStorage
+                localStorage.setItem('autoFetchEnabled', isEnabled);
+            });
+
+            // --- Core Logic ---
+            function showStatus(message, isError = false, duration = 5000) {
+                statusMessage.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'check-circle'} me-2"></i>${message}`;
+                statusMessage.className = `alert mt-3 ${isError ? 'alert-danger' : 'alert-success'}`;
+                statusMessage.style.display = 'block';
+                
+                // Animate appearance
+                statusMessage.style.opacity = "0";
+                statusMessage.style.transform = "translateY(20px)";
+                statusMessage.style.transition = "all 0.3s ease";
+                requestAnimationFrame(() => {
+                    statusMessage.style.opacity = "1";
+                    statusMessage.style.transform = "translateY(0)";
+                });
+
+                // Clear previous timeout if any
+                if (statusMessage.timeoutId) {
+                    clearTimeout(statusMessage.timeoutId);
+                }
+
+                // Automatically hide after specified duration (if duration > 0)
+                 if (duration > 0) {
+                    statusMessage.timeoutId = setTimeout(() => {
+                        statusMessage.style.opacity = "0";
+                        statusMessage.style.transform = "translateY(20px)";
+                        setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                            statusMessage.timeoutId = null;
+                        }, 300);
+                    }, duration);
+                 }
+            }
+
+            async function fetchSelectedComponentData() {
+                const payload = { type: "get_selected_script_component" };
+                console.log("Requesting selected component data from GH...");
+                // Only show status if not in auto-fetch mode or if manual button was clicked
+                if (!autoFetchIntervalId || fetchFromGhBtn.disabled === false) {
+                    showStatus("Fetching data from selected GH component...", false, 0);
+                }
+
+                try {
+                    const response = await fetch(ghServerUrl, {
+                        method: 'POST', // Assuming POST, adjust if GET is preferred server-side
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload),
+                        mode: 'cors'
+                    });
+
+                    let responseBodyText = await response.text();
+                    let result;
+                    try {
+                         result = JSON.parse(responseBodyText);
+                    } catch (e) {
+                         console.error("Failed to parse JSON response:", responseBodyText);
+                         throw new Error(`Server returned non-JSON response (Status ${response.status}): ${responseBodyText.substring(0, 200)}...`);
+                    }
+
+                    if (!response.ok) {
+                        const errorDetail = result?.result || `Server responded with status ${response.status}`;
+                        throw new Error(errorDetail);
+                    }
+
+                    console.log("Received component data:", result);
+
+                    if (result.status === 'success' && result.result) {
+                        // --- Auto-Fetch Check ---
+                        // Only load data if the fetched GUID is different from the current one
+                        const fetchedGuid = result.result.instance_guid;
+                        const currentGuid = targetGuidInput.value.trim();
+
+                        if (fetchedGuid && fetchedGuid !== currentGuid) {
+                            console.log(`New component selected (${fetchedGuid}), updating UI.`);
+                            loadDataFromPayload(result.result); // Pass the nested 'result' object
+                            showStatus(`Auto-loaded data for component ${fetchedGuid.substring(0, 8)}...`, false, 3000);
+                        } else if (!fetchedGuid) {
+                             console.warn("Fetched data successfully, but no instance_guid found in the result.");
+                        } else {
+                             // GUID is the same, no need to reload UI unless manually triggered
+                             if (!autoFetchIntervalId || fetchFromGhBtn.disabled === false) {
+                                 showStatus("Selected component data is already loaded.", false, 3000);
+                             }
+                             console.log(`Component ${currentGuid} is still selected. No UI update needed.`);
+                        }
+                    } else if (result.status === 'none_selected') {
+                        // Only show status if manually triggered or if GUID was previously set
+                        if (!autoFetchIntervalId || fetchFromGhBtn.disabled === false || targetGuidInput.value.trim() !== '') {
+                            showStatus("No script component selected in Grasshopper.", false, 3000); // Use non-error for this status
+                        }
+                    } else if (result.status === 'multiple_selected') {
+                        // Only show status if manually triggered or if GUID was previously set
+                        if (!autoFetchIntervalId || fetchFromGhBtn.disabled === false || targetGuidInput.value.trim() !== '') {
+                            showStatus("Multiple script components selected. Please select only one.", true, 5000);
+                        }
+                    } else {
+                        showStatus(`Error fetching data: ${result.result || 'Unknown error from server.'}`, true, 0);
+                    }
+
+                } catch (error) {
+                    console.error("Fetch Error:", error);
+                    showStatus(`Error connecting or fetching: ${error.message}. Is the GHPython server running?`, true, 0);
+                } finally {
+                    // Only re-enable manual fetch button if auto-fetch is OFF
+                    if (!autoFetchIntervalId) {
+                        fetchFromGhBtn.disabled = false;
+                        fetchFromGhBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Fetch';
+                    }
+                 }
+            }
+
+            function getUIData() {
+                const code = editor.getValue();
+                const targetGuid = targetGuidInput.value.trim();
+                const param_definitions = [];
+
+                // Collect Inputs
+                inputsList.querySelectorAll('.param-card[data-param-type="input"]').forEach(card => {
+                    const nameInput = card.querySelector('.param-name');
+                    const name = nameInput ? nameInput.value.trim() : '';
+                    if (name) {
+                         param_definitions.push({
+                            type: 'input',
+                            name: name,
+                            description: card.querySelector('.param-desc')?.value.trim() ?? '',
+                            typehint: card.querySelector('.param-typehint')?.value ?? 'generic',
+                            access: card.querySelector('.param-access')?.value ?? 'list',
+                            optional: card.querySelector('.param-optional')?.checked ?? true
+                        });
+                    } else {
+                         console.warn("Skipping input parameter card with no name.", card);
+                    }
+                });
+
+                // Collect Outputs (including the default 'output' one)
+                outputsList.querySelectorAll('.param-card[data-param-type="output"]').forEach(card => {
+                     const nameInput = card.querySelector('.param-name');
+                     const name = nameInput ? nameInput.value.trim() : '';
+                     if (name) {
+                        param_definitions.push({
+                            type: 'output',
+                            name: name,
+                            description: card.querySelector('.param-desc')?.value.trim() ?? ''
+                        });
+                     } else if (card.dataset.paramName !== 'output') {
+                         console.warn("Skipping output parameter card with no name.", card);
+                     }
+                });
+
+                if (!param_definitions.some(p => p.type === 'output' && p.name.toLowerCase() === 'output')) {
+                    console.error("Critical: Default 'output' parameter definition is missing!");
+                }
+
+                return { code, targetGuid, param_definitions };
+            }
+
+            async function sendDataToGrasshopper() {
+                const { code, targetGuid, param_definitions } = getUIData();
+
+                if (!targetGuid) {
+                    showStatus("Error: Target Component GUID is missing. Please copy/paste it from Grasshopper.", true, 0);
+                    targetGuidInput.focus();
+                    sendToGhBtn.disabled = false;
+                    sendToGhBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send to GH';
+                    return;
+                }
+
+                const payload = {
+                    type: "update_script",
+                    instance_guid: targetGuid,
+                    code: code,
+                    param_definitions: param_definitions
+                };
+
+                console.log("Sending payload to GH:", JSON.stringify(payload, null, 2));
+                showStatus("Sending update to Grasshopper...", false, 0);
+
+                try {
+                    const response = await fetch(ghServerUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload),
+                        mode: 'cors'
+                    });
+
+                    let responseBodyText = await response.text();
+                    let result;
+                    try {
+                         result = JSON.parse(responseBodyText);
+                    } catch (e) {
+                         console.error("Failed to parse JSON response:", responseBodyText);
+                         throw new Error(`Server returned non-JSON response (Status ${response.status}): ${responseBodyText.substring(0, 200)}...`);
+                    }
+
+                    if (!response.ok) {
+                        const errorDetail = result?.result || `Server responded with status ${response.status}`;
+                        throw new Error(errorDetail);
+                    }
+
+                    console.log("Grasshopper Response:", result);
+
+                    if (result.status === 'success') {
+                        let successMsg = "Update successful.";
+                        if (typeof result.result === 'object' && result.result !== null) {
+                            const details = [];
+                            if (result.result.code_updated) details.push("code");
+                            if (result.result.params_updated) details.push("parameters");
+                            if (result.result.description_updated) details.push("description");
+                            if (details.length > 0) {
+                                successMsg = `Successfully updated ${details.join(', ')} for component ${result.result.component_type || ''}.`;
+                            }
+                        } else if (result.result) {
+                            successMsg = `Success: ${result.result}`;
+                        }
+                        showStatus(successMsg.trim(), false);
+                    } else {
+                        showStatus(`Grasshopper Error: ${result.result || 'Unknown error from component.'}`, true, 0);
+                    }
+
+                } catch (error) {
+                    console.error("Network/Fetch Error:", error);
+                    showStatus(`Error connecting or processing: ${error.message}. Is the GHPython server running and accessible at ${ghServerUrl}?`, true, 0);
+                } finally {
+                    sendToGhBtn.disabled = false;
+                    sendToGhBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send to GH';
+                }
+            }
+
+            async function handleAISubmit() {
+                const prompt = aiPromptInput.value.trim();
+                const key = apiKeyInput.value.trim();
+                const generateParams = aiGenerateParamsCheckbox.checked;
+                const currentCode = editor.getValue();
+                const currentParams = getUIData().param_definitions.filter(p => 
+                    !(p.type === 'output' && p.name === 'output' && !p.description)
+                );
+
+                // --- Find the parent card of the code editor ---
+                const editorElement = document.getElementById('code-editor');
+                const editorCard = editorElement.closest('.card'); // Find the nearest ancestor with class 'card'
+                // --- End find parent card ---
+
+                // --- Add loading animation to the card ---
+                if (editorCard) {
+                    editorCard.classList.add('ai-loading-pulse');
+                } else {
+                    console.warn("Could not find parent card for editor to apply animation.");
+                }
+                // --- End animation add ---
+
+                if (!prompt) {
+                    showStatus("Error: AI Prompt cannot be empty.", true);
+                    aiPromptInput.focus();
+                    aiSubmitBtn.disabled = false;
+                    aiSubmitBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Code with AI';
+                    if (editorCard) editorCard.classList.remove('ai-loading-pulse'); // Remove animation on early exit
+                    return;
+                }
+                if (!key) {
+                    showStatus("Error: AI API Key is missing.", true);
+                    apiKeyInput.focus();
+                    aiSubmitBtn.disabled = false;
+                    aiSubmitBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Code with AI';
+                    if (editorCard) editorCard.classList.remove('ai-loading-pulse'); // Remove animation on early exit
+                    return;
+                }
+
+                const systemPrompt = `You are an expert Grasshopper and IronPython (Python 2.7) script component developer.
+- Write clean, efficient, and well-commented IronPython code suitable for the GHPython component.
+- Always import all necessary modules at the top of the code.
+- NEVER use f-strings, as they are not supported in IronPython. Use the .format() method or older string formatting techniques.
+- If generating parameters, carefully choose appropriate names (snake_case), descriptions, type hints (matching Grasshopper types like str, int, float, bool, point, vector, curve, surface, brep, mesh, guid, generic), and access types (item, list, tree).
+- Ensure input parameter names are valid Python variable names.
+- Ensure output parameter names are valid Python variable names.
+- The generated code should correctly use the defined input parameters and assign results to the defined output parameters.
+- Create outputs following the grasshopper logic, often with multiple outputs for different lists, datatrees etc. so they can easily be used with grasshopper components downstream 
+- IF not prompted differently only output Lists, Items, or DataTrees. No nested lists etc.
+- Add reasonable comments explaining the code logic.
+- Respond ONLY with the requested JSON structure.
+- Start thinking step by step, you can add a 'reasoning' property to your response to explain your thinking, then implement the code`;
+
+                const responseSchemaBase = {
+                    type: "object",
+                    properties: {
+                        reasoning: {
+                            type: "string",
+                            description: "List your thinging steps here"
+                        },
+                        code: {
+                            type: "string",
+                            description: "The generated IronPython code for the GHPython component."
+                        },
+                        description: {
+                             type: "string",
+                             description: "A brief description for the Grasshopper component itself (optional)."
+                        }
+                    },
+                    required: ["code", "description", "reasoning"]
+                };
+
+                const paramDefinitionSchema = {
+                    type: "array",
+                    description: "List of input and output parameter definitions for the component.",
+                    items: {
+                        type: "object",
+                        properties: {
+                            type: { type: "string", enum: ["input", "output"] },
+                            name: { type: "string", description: "Parameter name (snake_case, valid Python variable)" },
+                            description: { type: "string", description: "User-friendly description for the parameter." },
+                            typehint: { type: "string", enum: ["str", "int", "float", "bool", "guid", "point", "vector", "curve", "surface", "brep", "mesh", "generic"], description: "Data type hint (optional for outputs)." },
+                            access: { type: "string", enum: ["item", "list", "tree"], description: "Data access type (item, list, tree - optional for outputs)." },
+                            optional: { type: "boolean", description: "Whether the input parameter is optional (optional for outputs)." }
+                        },
+                        required: ["type", "name", "description", "typehint", "access", "optional"],
+                        additionalProperties: false
+                    }
+                };
+
+                // Start with the base schema properties and required fields
+                let finalResponseSchema = {
+                    type: "object",
+                    properties: { ...responseSchemaBase.properties }, // Copy properties
+                    required: [...responseSchemaBase.required], // Copy required array
+                    additionalProperties: false // Explicitly disallow other top-level properties
+                };
+
+                if (generateParams) {
+                    finalResponseSchema.properties.param_definitions = paramDefinitionSchema;
+                    // Add param_definitions to the required list if generating params
+                    if (!finalResponseSchema.required.includes("param_definitions")) {
+                        finalResponseSchema.required.push("param_definitions");
+                    }
+                }
+
+                let userPrompt = `User Prompt: "${prompt}"\n\n`;
+                if (currentCode && currentCode.trim() !== 'print("VibeCode Editor Ready")' && currentCode.trim() !== '') {
+                    userPrompt += `Current Code:\n\`\`\`python\n${currentCode}\n\`\`\`\n\n`;
+                }
+                if (currentParams.length > 0) {
+                     userPrompt += `Current Parameters:\n\`\`\`json\n${JSON.stringify(currentParams, null, 2)}\n\`\`\`\n\n`;
+                }
+                userPrompt += `Please generate the ${generateParams ? 'code and parameters' : 'code only'} based on the prompt${currentCode ? ' and existing context' : ''}. Ensure your response strictly follows the provided JSON schema.`;
+
+                const requestPayload = {
+                    model: "gpt-4o-2024-08-06",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    response_format: {
+                        type: "json_schema",
+                        json_schema: {
+                            name: "grasshopper_script_generator",
+                            description: `Generates IronPython code ${generateParams ? 'and parameter definitions ' : ''}for a Grasshopper component.`,
+                            schema: finalResponseSchema,
+                            strict: true
+                        }
+                    },
+                    temperature: 0.5
+                };
+
+                console.log("--- Sending AI Request ---");
+                console.log("Payload:", JSON.stringify(requestPayload, null, 2));
+                showStatus("Generating code with AI...", false, 0);
+
+                try {
+                    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${key}`
+                        },
+                        body: JSON.stringify(requestPayload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({
+                             error: { message: `HTTP error! Status: ${response.status} ${response.statusText}` } 
+                        }));
+                        console.error("OpenAI API Error Response:", errorData);
+                        throw new Error(`OpenAI API Error: ${errorData.error?.message || `HTTP ${response.status}`}`);
+                    }
+
+                    const data = await response.json();
+                    console.log("--- AI Response Received ---", data);
+
+                    if (!data.choices || data.choices.length === 0 || !data.choices[0].message || !data.choices[0].message.content) {
+                        throw new Error("Invalid response structure received from OpenAI.");
+                    }
+
+                    const jsonContentString = data.choices[0].message.content;
+                    let aiResult;
+                    try {
+                        aiResult = JSON.parse(jsonContentString);
+                    } catch (parseError) {
+                        console.error("Failed to parse AI JSON response:", parseError);
+                        console.error("Received content string:", jsonContentString);
+                        throw new Error("AI returned invalid JSON. Check console for details.");
+                    }
+
+                    console.log("Parsed AI Result:", aiResult);
+
+                    // --- Conditionally build the payload for loadDataFromPayload ---
+                    const updatePayload = {
+                        code: aiResult.code,
+                        description: aiResult.description || targetGuidInput.value, // Keep description update
+                        message_to_user: "Code generated by AI."
+                        // Only include param_definitions if they were requested and generated
+                        // param_definitions: generateParams ? aiResult.param_definitions : undefined // Original logic
+                    };
+                    if (generateParams && Array.isArray(aiResult.param_definitions)) {
+                         updatePayload.param_definitions = aiResult.param_definitions;
+                    }
+                    // --- End conditional payload build ---
+
+                    loadDataFromPayload(updatePayload); // Pass the potentially modified payload
+                    showStatus("AI generation successful!", false);
+
+                    // --- Show Speech Bubble ---
+                    let bubbleText = "AI successfully updated the code."; // Default message
+                    let paramCount = 0;
+                    if (generateParams && Array.isArray(aiResult.param_definitions)) {
+                         paramCount = aiResult.param_definitions.length;
+                         // Filter out the default 'output' if it was the only one generated (less interesting)
+                         const nonDefaultParams = aiResult.param_definitions.filter(p => !(p.type === 'output' && p.name === 'output'));
+                         if (nonDefaultParams.length > 0) {
+                             bubbleText = `AI updated code and generated/updated ${nonDefaultParams.length} parameter(s).`;
+                         } else {
+                             bubbleText = "AI updated code and confirmed default output parameter.";
+                         }
+                    } else if (!generateParams && aiResult.description && aiResult.description !== targetGuidInput.value) {
+                         // If params weren't generated, maybe mention description update if it changed
+                         // bubbleText = "AI updated code and component description.";
+                    }
+
+
+                    aiSummaryBubble.innerText = bubbleText;
+                    aiSummaryBubble.classList.add('active');
+
+                    // Hide the bubble after a slightly longer delay
+                    setTimeout(() => {
+                        aiSummaryBubble.classList.remove('active');
+                    }, 5000); // Keep visible for 5 seconds
+                    // --- End Speech Bubble ---
+
+                } catch (error) {
+                    console.error("AI Generation Error:", error);
+                    showStatus(`AI Error: ${error.message}`, true, 0);
+                    // Ensure bubble is hidden on error
+                    aiSummaryBubble.classList.remove('active');
+                } finally {
+                    aiSubmitBtn.disabled = false;
+                    aiSubmitBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Code with AI';
+                    // --- Remove loading animation from the card ---
+                    if (editorCard) {
+                        editorCard.classList.remove('ai-loading-pulse');
+                    }
+                    // --- End animation remove ---
+                }
+            }
+
+            // --- Test Data Loading ---
+            const dummyPayload = {
+                type: "update_script",
+                instance_guid: "DUMMY-GUID-REPLACE-ME",
+                code: "# Dummy Python code from Test Payload\nimport rhinoscriptsyntax as rs\n\nif points and threshold:\n    filtered_points = [p for p in points if p.Z > threshold]\n    output = filtered_points\n    info = f\"Filtered {len(filtered_points)} points.\"\nelse:\n    output = []\n    info = \"Inputs missing.\"",
+                description: "Filters points based on Z height (Test Data).",
+                message_to_user: "Loaded test data successfully!",
+                param_definitions: [
+                    {
+                        "type": "input", "name": "points", "description": "List of points to filter",
+                        "typehint": "point", "access": "list", "optional": false
+                    },
+                    {
+                        "type": "input", "name": "threshold", "description": "Minimum Z value",
+                        "typehint": "float", "access": "item", "optional": false
+                    },
+                    {
+                        "type": "input", "name": "optional_setting", "description": "An optional setting",
+                        "typehint": "str", "access": "item", "optional": true
+                    },
+                    {
+                        "type": "output", "name": "output", // The required default output
+                        "description": "Filtered points (Updated by Test)"
+                    },
+                    {
+                        "type": "output", "name": "info",
+                        "description": "Information about the filtering process"
+                    }
+                ]
+            };
+
+            function clearParameters() {
+                // Remove all input cards
+                inputsList.innerHTML = '';
+
+                // Remove all output cards EXCEPT the default 'output' one
+                outputsList.querySelectorAll('.param-card[data-param-type="output"]').forEach(card => {
+                    if (card.dataset.paramName !== 'output') {
+                        card.remove();
+                    } else {
+                        // Reset description of default output card as well
+                        const descInput = card.querySelector('.param-desc');
+                        if (descInput) descInput.value = '';
+                    }
+                });
+            }
+
+            function loadDataFromPayload(payload) {
+                if (!payload || typeof payload !== 'object') {
+                    showStatus("Error: Invalid payload format for loading data.", true);
+                    return;
+                }
+
+                console.log("Loading data from payload:", payload);
+
+                // Update Target GUID - Use instance_guid from payload if available
+                const guidToSet = payload.instance_guid || payload.targetGuid;
+                if (guidToSet) {
+                    targetGuidInput.value = guidToSet;
+                }
+
+                // Update Code Editor
+                if (payload.code !== undefined && payload.code !== null) {
+                    editor.setValue(payload.code, -1); // -1 moves cursor to start
+                }
+
+                // Update Parameters ONLY if they are provided in the payload
+                if (Array.isArray(payload.param_definitions)) {
+                    console.log("Payload contains new parameters, clearing existing ones.");
+                    // Clear existing dynamic parameters before adding new ones
+                    clearParameters();
+
+                    payload.param_definitions.forEach(paramDef => {
+                        if (paramDef.type === 'input') {
+                            createInputCard(paramDef);
+                        } else if (paramDef.type === 'output') {
+                            if (paramDef.name.toLowerCase() === 'output') {
+                                // Update the existing default output card's description
+                                const defaultOutputCard = outputsList.querySelector('.param-card[data-param-name="output"]');
+                                if (defaultOutputCard) {
+                                    const descInput = defaultOutputCard.querySelector('.param-desc');
+                                    if (descInput) {
+                                        descInput.value = paramDef.description || '';
+                                    }
+                                    // Update title for default output too, if needed (though it's usually static)
+                                    // updateCardTitle(defaultOutputCard, 'output', 'output');
+                                }
+                            } else {
+                                // Create new output cards for others
+                                createOutputCard(paramDef);
+                            }
+                        }
+                    });
+                } else {
+                     console.log("Payload does not contain new parameters, existing ones preserved.");
+                }
+
+                // Optionally update component description (if you add a field for it)
+                // if (payload.description) { ... }
+
+                showStatus(payload.message_to_user || "Data loaded successfully.", false);
+            }
+
+            function loadTestData() {
+                loadDataFromPayload(dummyPayload);
+            }
+
+            // --- Auto-Fetch Functions ---
+            function startAutoFetch() {
+                if (autoFetchIntervalId) return; // Already running
+                console.log("Starting auto-fetch...");
+                fetchFromGhBtn.disabled = true; // Disable manual fetch
+                // Perform an initial fetch immediately
+                fetchSelectedComponentData();
+                // Start the interval timer
+                autoFetchIntervalId = setInterval(fetchSelectedComponentData, AUTO_FETCH_INTERVAL);
+                showStatus("Auto-fetch enabled.", false, 3000);
+            }
+
+            function stopAutoFetch() {
+                if (!autoFetchIntervalId) return; // Not running
+                console.log("Stopping auto-fetch...");
+                clearInterval(autoFetchIntervalId);
+                autoFetchIntervalId = null;
+                fetchFromGhBtn.disabled = false; // Re-enable manual fetch
+                showStatus("Auto-fetch disabled.", false, 3000);
+            }
+
+            // --- Initialization ---
+            function initializeAutoFetch() {
+                const savedState = localStorage.getItem('autoFetchEnabled');
+                if (savedState === 'true') {
+                    autoFetchSwitch.checked = true;
+                    startAutoFetch();
+                } else {
+                    autoFetchSwitch.checked = false;
+                    stopAutoFetch(); // Ensures manual button is enabled initially if auto-fetch is off
+                }
+            }
+
+             // Check if running from file:// protocol (can cause CORS issues with fetch)
+              if (window.location.protocol === 'file:') {
+                   console.warn("Running from file:// protocol. Fetch requests to http://127.0.0.1 might be blocked by CORS policy in some browsers unless the server sends 'Access-Control-Allow-Origin: *' or 'Access-Control-Allow-Origin: null'. Your GH script includes this, so it *should* work, but be aware.");
+              }
+
+            // Initialize auto-fetch state on load
+            initializeAutoFetch();
+
+        }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
