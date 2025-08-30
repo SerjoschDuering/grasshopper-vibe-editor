@@ -1,0 +1,84 @@
+# Node / Next.js
+node_modules/
+.npm/
+
+# Next.js build output
+.next/
+out/
+.vercel/
+
+# Production builds
+/dist/
+/build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Caches
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.swc/
+
+# Logs
+logs
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor settings
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS-specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Swap/temp
+*.swp
+*.swo
+*.tmp
+*.temp
+
+# PIDs
+pids
+*.pid
+*.pid.lock
+
+# Python (for ghserver.py)
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+python*.log
+pip-log.txt
+pip-delete-this-directory.txt
+.venv/
+venv/
+ENV/

@@ -51,6 +51,19 @@ class GHEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, System.Guid):
             return str(obj)
+        # Handle RectangleF for bounds
+        try:
+            if isinstance(obj, RectangleF):
+                return {"x": float(obj.X), "y": float(obj.Y), "width": float(obj.Width), "height": float(obj.Height)}
+        except:
+            pass
+        # Handle Point3d for positions (if Rhino.Geometry is available)
+        try:
+            import Rhino.Geometry as rg
+            if isinstance(obj, rg.Point3d):
+                return {"x": float(obj.X), "y": float(obj.Y), "z": float(obj.Z)}
+        except:
+            pass
         # Add other simple type conversions if needed, but avoid complex geometry
         # For most communication, we'll stick to strings, numbers, bools, lists, dicts
         try:
@@ -216,6 +229,64 @@ def create_gh_output_param(param_def):
     param.Description = description
 
     return param
+
+# --- Context Collection Helper Functions ---
+
+def _rect_canvas_to_web(rect):
+    """Convert canvas rectangle to web coordinates (inverts Y axis)."""
+    try:
+        return {"x": float(rect.X), "y": float(rect.Y * -1) - float(rect.Height), 
+                "width": float(rect.Width), "height": float(rect.Height)}
+    except:
+        return None
+
+def _pt_canvas_to_web(pt):
+    """Convert canvas point to web coordinates (inverts Y axis)."""
+    try:
+        return {"x": float(pt.X), "y": float(pt.Y * -1), "z": 0}
+    except:
+        return None
+
+def _collect_runtime_messages(obj):
+    """Collect runtime messages from a component or parameter."""
+    msgs = {"errors": [], "warnings": [], "remarks": []}
+    try:
+        # Try modern GH API first
+        from Grasshopper.Kernel import GH_RuntimeMessageLevel
+        if hasattr(obj, "RuntimeMessages"):
+            try:
+                for m in obj.RuntimeMessages(GH_RuntimeMessageLevel.Error):
+                    msgs["errors"].append(str(getattr(m, "Message", m)))
+            except: pass
+            try:
+                for m in obj.RuntimeMessages(GH_RuntimeMessageLevel.Warning):
+                    msgs["warnings"].append(str(getattr(m, "Message", m)))
+            except: pass
+            try:
+                for m in obj.RuntimeMessages(GH_RuntimeMessageLevel.Remark):
+                    msgs["remarks"].append(str(getattr(m, "Message", m)))
+            except: pass
+    except:
+        # Fallback for older API
+        try:
+            if hasattr(obj, "RuntimeErrors"):
+                for err in obj.RuntimeErrors:
+                    msgs["errors"].append(str(err))
+        except: pass
+        try:
+            if hasattr(obj, "RuntimeWarnings"):
+                for warn in obj.RuntimeWarnings:
+                    msgs["warnings"].append(str(warn))
+        except: pass
+    
+    # Get bubble message if any
+    try:
+        bubble = getattr(obj, "Message", None)
+        if bubble:
+            msgs["remarks"].append(str(bubble))
+    except: pass
+    
+    return msgs
 
 def update_script_component_on_ui_thread(instance_guid_str, code, description, param_definitions):
     """
