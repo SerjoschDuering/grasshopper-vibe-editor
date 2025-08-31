@@ -183,6 +183,11 @@ function toGhParamDefsForRevisionFromUi(inputs: InputParameter[], outputs: Outpu
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
+  // Config
+  // Use env var so the deployed app can talk to a tunneled local server
+  // e.g. NEXT_PUBLIC_GH_SERVER_URL=https://xxxxx.ngrok.app
+  // Fallback to localhost during development
+  __GH_SERVER_URL: (process.env.NEXT_PUBLIC_GH_SERVER_URL as string) || 'http://127.0.0.1:9998',
   // Initial state
   code: `# Python code for the Grasshopper component
 # Access inputs using their names if defined, e.g.:
@@ -1153,7 +1158,7 @@ output = process_points(points, scale)`
     set({ contextLoading: true, contextError: null })
     
     try {
-      const response = await fetch('http://127.0.0.1:9998', {
+      const response = await fetch((get() as any).__GH_SERVER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1203,7 +1208,7 @@ output = process_points(points, scale)`
   // Selection & Traversal actions implementation
   fetchSelection: async () => {
     try {
-      const response = await fetch('http://127.0.0.1:9998', {
+      const response = await fetch((get() as any).__GH_SERVER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
