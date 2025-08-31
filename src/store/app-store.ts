@@ -53,6 +53,23 @@ export interface AppState {
   loading: LoadingFlags
   status?: StatusMessage
   collapsedCards: Set<string>
+  
+  // Context Tab
+  activeTab: 'coding' | 'context'
+  contextData: any | null
+  contextLoading: boolean
+  contextError: string | null
+  contextAutoRefresh: boolean
+  
+  // Selection & Traversal
+  selectedComponentGuids: string[]
+  contextUpstreamLevels: number
+  contextDownstreamLevels: number
+  contextDetailLevel: 'simple' | 'standard' | 'detailed'
+  contextSize: {
+    componentCount: number
+    estimatedTokens: number
+  }
 
   // Sync actions
   setCode: (code: string) => void
@@ -92,6 +109,22 @@ export interface AppState {
   // Optional: reordering
   reorderInputs: (activeId: string, overId: string) => void
   reorderOutputs: (activeId: string, overId: string) => void
+  
+  // Context Tab actions
+  setActiveTab: (tab: 'coding' | 'context') => void
+  setContextData: (data: any) => void
+  fetchContext: () => Promise<void>
+  toggleContextAutoRefresh: () => void
+  
+  // Selection & Traversal actions
+  fetchSelection: () => Promise<void>
+  setUpstreamLevels: (levels: number) => void
+  setDownstreamLevels: (levels: number) => void
+  setContextDetailLevel: (level: 'simple' | 'standard' | 'detailed') => void
+  clearSelection: () => void
+  addToSelection: (guid: string) => void
+  removeFromSelection: (guid: string) => void
+  computeContextSize: () => void
 }
 
 // Generate unique IDs
@@ -190,6 +223,23 @@ print("VibeCode Editor Ready")`,
   },
   status: undefined,
   collapsedCards: getInitialCollapsedCards(),
+  
+  // Context Tab initial state
+  activeTab: 'coding' as const,
+  contextData: null,
+  contextLoading: false,
+  contextError: null,
+  contextAutoRefresh: false,
+  
+  // Selection & Traversal initial state
+  selectedComponentGuids: [],
+  contextUpstreamLevels: 0,
+  contextDownstreamLevels: 0,
+  contextDetailLevel: 'simple' as const,
+  contextSize: {
+    componentCount: 0,
+    estimatedTokens: 0
+  },
 
   // Sync actions
   setCode: (code) => {
@@ -1080,5 +1130,191 @@ output = process_points(points, scale)`
       console.error('Revert error:', error)
       get().showStatus({ message: 'Failed to fetch from Grasshopper. Is the server running?', type: 'error', duration: 4000 })
     }
+  },
+
+  // Context Tab actions
+  setActiveTab: (tab) => {
+    set({ activeTab: tab })
+    // Store in localStorage for persistence
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vibecode_activeTab', tab)
+    }
+  },
+
+  setContextData: (data) => {
+    set({ contextData: data, contextError: null })
+  },
+
+  fetchContext: async () => {
+    set({ contextLoading: true, contextError: null })
+    
+    try {
+      const response = await fetch('http://127.0.0.1:9998', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'get_context',
+          options: {
+            freezeCanvas: false
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.status === 'success') {
+        set({ 
+          contextData: data,
+          contextLoading: false,
+          contextError: null
+        })
+      } else {
+        throw new Error(data.result || 'Failed to fetch context')
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to fetch context'
+      set({ 
+        contextLoading: false,
+        contextError: errorMsg
+      })
+      get().showStatus({ 
+        message: `Context fetch failed: ${errorMsg}`, 
+        type: 'error', 
+        duration: 4000 
+      })
+    }
+  },
+
+
+  toggleContextAutoRefresh: () => {
+    set(state => ({ contextAutoRefresh: !state.contextAutoRefresh }))
+  },
+  
+  // Selection & Traversal actions implementation
+  fetchSelection: async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:9998', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'get_selection'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.status === 'success') {
+        set({ 
+          selectedComponentGuids: data.selectedGuids || []
+        })
+        // Compute context size when selection changes
+        get().computeContextSize()
+        get().showStatus({ 
+          message: `Fetched ${data.count || 0} selected components`, 
+          type: 'success', 
+          duration: 2000 
+        })
+      } else {
+        throw new Error(data.result || 'Failed to fetch selection')
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to fetch selection'
+      get().showStatus({ 
+        message: `Selection fetch failed: ${errorMsg}`, 
+        type: 'error', 
+        duration: 3000 
+      })
+    }
+  },
+  
+  setUpstreamLevels: (levels) => {
+    set({ contextUpstreamLevels: Math.max(0, Math.min(10, levels)) })
+    get().computeContextSize()
+  },
+  
+  setDownstreamLevels: (levels) => {
+    set({ contextDownstreamLevels: Math.max(0, Math.min(10, levels)) })
+    get().computeContextSize()
+  },
+  
+  setContextDetailLevel: (level) => {
+    set({ contextDetailLevel: level })
+    get().computeContextSize()
+  },
+  
+  clearSelection: () => {
+    set({ 
+      selectedComponentGuids: [],
+      contextSize: {
+        componentCount: 0,
+        estimatedTokens: 0
+      }
+    })
+  },
+  
+  addToSelection: (guid) => {
+    set(state => {
+      const guids = new Set(state.selectedComponentGuids)
+      guids.add(guid)
+      return {
+        selectedComponentGuids: Array.from(guids)
+      }
+    })
+    get().computeContextSize()
+  },
+  
+  removeFromSelection: (guid) => {
+    set(state => ({
+      selectedComponentGuids: state.selectedComponentGuids.filter(g => g !== guid)
+    }))
+    get().computeContextSize()
+  },
+  
+  computeContextSize: () => {
+    const state = get()
+    const { selectedComponentGuids, contextUpstreamLevels, contextDownstreamLevels, contextDetailLevel, contextData } = state
+    
+    if (!contextData || selectedComponentGuids.length === 0) {
+      set({ 
+        contextSize: {
+          componentCount: 0,
+          estimatedTokens: 0
+        }
+      })
+      return
+    }
+    
+    // Simple estimation for now - will be refined with actual traversal
+    const baseComponents = selectedComponentGuids.length
+    const upstreamMultiplier = Math.pow(2, contextUpstreamLevels) // Rough estimate
+    const downstreamMultiplier = Math.pow(2, contextDownstreamLevels)
+    const totalComponents = Math.min(
+      baseComponents * upstreamMultiplier * downstreamMultiplier,
+      contextData.components?.length || 0
+    )
+    
+    // Token estimation based on detail level
+    let tokensPerComponent = 50 // simple
+    if (contextDetailLevel === 'standard') tokensPerComponent = 150
+    if (contextDetailLevel === 'detailed') tokensPerComponent = 500
+    
+    set({
+      contextSize: {
+        componentCount: Math.floor(totalComponents),
+        estimatedTokens: Math.floor(totalComponents * tokensPerComponent)
+      }
+    })
   }
 }))

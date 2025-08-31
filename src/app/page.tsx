@@ -5,6 +5,8 @@ import InputParameters from '@/components/InputParameters'
 import OutputParameters from '@/components/OutputParameters'
 import ConfigPanel from '@/components/ConfigPanel'
 import AIPanel from '@/components/AIPanel'
+import TabNavigation from '@/components/TabNavigation'
+import ContextPanel from '@/components/ContextPanel'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
 
@@ -110,16 +112,23 @@ export default function Home() {
   const setCode = useAppStore((state) => state.setCode)
   const apiKey = useAppStore((state) => state.apiKey)
   const setApiKey = useAppStore((state) => state.setApiKey)
+  const activeTab = useAppStore((state) => state.activeTab)
 
   return (
-    <div className="space-y-6">
-      {/* Top Configuration Row */}
-      <div className="card p-3 mb-4" style={{ backgroundColor: '#f8f9fa' }}>
-        <ConfigPanel />
-      </div>
+    <div className="space-y-4">
+      {/* Tab Navigation */}
+      <TabNavigation />
+      
+      {/* Tab Content */}
+      {activeTab === 'coding' ? (
+        <>
+          {/* Top Configuration Row */}
+          <div className="card p-3 mb-4" style={{ backgroundColor: '#f8f9fa' }}>
+            <ConfigPanel />
+          </div>
 
-      {/* Three-Column Layout */}
-      <div className="grid lg:grid-cols-12 gap-6 items-start">
+          {/* Three-Column Layout */}
+          <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* Column 1: Inputs */}
         <div className="lg:col-span-3">
           <div className="card flex flex-col" style={{ height: 'calc(50vh + 400px)', maxHeight: '80vh' }}>
@@ -209,6 +218,11 @@ export default function Home() {
           </div>
         </div>
       </div>
+        </>
+      ) : (
+        /* Context Tab */
+        <ContextPanel />
+      )}
     </div>
   )
 }

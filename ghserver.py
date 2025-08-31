@@ -20,6 +20,11 @@ clr.AddReference("Grasshopper")
 # Imports for Grasshopper types
 import Grasshopper
 import Grasshopper as gh
+# Special components (e.g., Panel)
+try:
+    import Grasshopper.Kernel.Special as GHSpecial
+except:
+    GHSpecial = None
 from Grasshopper.Kernel import GH_ParamAccess, IGH_Param
 from Grasshopper.Kernel.Parameters import (
     Param_GenericObject, Param_String, Param_Number,
@@ -479,6 +484,254 @@ def update_script_component_on_ui_thread(instance_guid_str, code, description, p
 
     return result
 
+# --- Selection Function ---
+
+def get_selected_components():
+    """
+    Returns GUIDs of currently selected components in GH canvas
+    """
+    try:
+        doc = ghenv.Component.OnPingDocument()
+        if not doc:
+            return {"status": "error", "result": "No active Grasshopper document"}
+        
+        selected_guids = []
+        
+        # Get all selected objects
+        for obj in doc.SelectedObjects():
+            # Check if it's a component (not just a parameter or other object)
+            if isinstance(obj, gh.Kernel.IGH_Component):
+                selected_guids.append(str(obj.InstanceGuid))
+        
+        return {
+            "status": "success",
+            "selectedGuids": selected_guids,
+            "count": len(selected_guids)
+        }
+    except Exception as e:
+        return {"status": "error", "result": "Failed to get selection: {}".format(str(e))}
+
+# --- Context Collection Function ---
+
+def get_context(options=None):
+    """
+    Collect raw Grasshopper graph data - minimal processing, just data collection.
+    Returns components, parameters, and connections as simple lists.
+    """
+    try:
+        doc = ghenv.Component.OnPingDocument()
+        if not doc:
+            return {"status": "error", "result": "No active Grasshopper document"}
+        
+        options = options or {}
+        freeze = bool(options.get("freezeCanvas", False))
+        
+        canvas = gh.Instances.ActiveCanvas
+        if canvas and freeze:
+            canvas.Document.Enabled = False
+        
+        try:
+            components = []
+            params = []  # Keep for standalone params
+            connections = []
+            
+            # Collect all objects in the document
+            for obj in doc.Objects:
+                try:
+                    if isinstance(obj, Grasshopper.Kernel.IGH_Component):
+                        # Collect component info
+                        comp_info = {
+                            "instanceGuid": str(obj.InstanceGuid),
+                            "name": getattr(obj, "Name", ""),
+                            "nickName": getattr(obj, "NickName", ""),
+                            "description": getattr(obj, "Description", ""),
+                            "category": getattr(obj, "Category", None),
+                            "subCategory": getattr(obj, "SubCategory", None),
+                            "kind": "component",
+                            "isScript": bool(hasattr(obj, "Code")),
+                            "scriptContent": None,
+                            "scriptLanguage": None,
+                            "locked": bool(getattr(obj, "Locked", False)),
+                            "hidden": bool(getattr(obj, "Hidden", False)),
+                            "runtime": _collect_runtime_messages(obj),
+                            "inputs": [],  # Nested input parameters
+                            "outputs": []  # Nested output parameters
+                        }
+                        
+                        # Add bounds if available
+                        if hasattr(obj, "Attributes") and hasattr(obj.Attributes, "Bounds"):
+                            comp_info["bounds"] = _rect_canvas_to_web(obj.Attributes.Bounds)
+                        if hasattr(obj, "Attributes") and hasattr(obj.Attributes, "Pivot"):
+                            comp_info["pivot"] = _pt_canvas_to_web(obj.Attributes.Pivot)
+                        
+                        # Add computation time if available
+                        if hasattr(obj, "ProcessorTime"):
+                            comp_info["computationTime"] = float(obj.ProcessorTime.Milliseconds)
+                        
+                        # Extract script content if it's a script component
+                        if comp_info["isScript"]:
+                            # Check if detailed mode is requested (for now, always include if available)
+                            include_script = options.get("includeScriptContent", True) if options else True
+                            if include_script:
+                                try:
+                                    if hasattr(obj, "Code"):
+                                        comp_info["scriptContent"] = str(obj.Code)
+                                        
+                                        # Try to detect the language
+                                        type_name = str(type(obj).__name__)
+                                        if "GhPython" in type_name or "Python" in type_name:
+                                            comp_info["scriptLanguage"] = "Python"
+                                        elif "C#" in type_name or "CSharp" in type_name:
+                                            comp_info["scriptLanguage"] = "C#"
+                                        elif "VB" in type_name:
+                                            comp_info["scriptLanguage"] = "VB"
+                                        else:
+                                            comp_info["scriptLanguage"] = "Unknown"
+                                except:
+                                    pass  # Silently fail if we can't get script content
+                        
+                        # Collect input parameters - now nested within component
+                        if hasattr(obj.Params, "Input"):
+                            for p_in in obj.Params.Input:
+                                param_info = {
+                                    "instanceGuid": str(p_in.InstanceGuid),
+                                    "componentGuid": str(obj.InstanceGuid),
+                                    "name": p_in.Name,
+                                    "nickName": p_in.NickName,
+                                    "kind": "input",
+                                    "dataType": get_typehint_string(p_in),
+                                    "access": get_access_string(p_in.Access),
+                                    "optional": p_in.Optional,
+                                    "hasData": bool(hasattr(p_in, "DataType") and p_in.DataType != gh.Kernel.GH_ParamData.void)
+                                }
+                                comp_info["inputs"].append(param_info)
+                                
+                                # Also add to flat params list for connection tracking
+                                params.append(param_info)
+                                
+                                # Collect connections from this input
+                                if hasattr(p_in, "Sources"):
+                                    for source in p_in.Sources:
+                                        if source:
+                                            connections.append({
+                                                "from": str(source.InstanceGuid),
+                                                "to": str(p_in.InstanceGuid),
+                                                "type": "wire"
+                                            })
+                        
+                        # Collect output parameters - now nested within component
+                        if hasattr(obj.Params, "Output"):
+                            for p_out in obj.Params.Output:
+                                param_info = {
+                                    "instanceGuid": str(p_out.InstanceGuid),
+                                    "componentGuid": str(obj.InstanceGuid),
+                                    "name": p_out.Name,
+                                    "nickName": p_out.NickName,
+                                    "kind": "output",
+                                    "dataType": get_typehint_string(p_out)
+                                }
+                                comp_info["outputs"].append(param_info)
+                                
+                                # Also add to flat params list for connection tracking
+                                params.append(param_info)
+                                
+                                # Collect connections from this output
+                                if hasattr(p_out, "Recipients"):
+                                    for recipient in p_out.Recipients:
+                                        if recipient:
+                                            connections.append({
+                                                "from": str(p_out.InstanceGuid),
+                                                "to": str(recipient.InstanceGuid),
+                                                "type": "wire"
+                                            })
+                        
+                        components.append(comp_info)
+                    
+                    elif isinstance(obj, IGH_Param):
+                        # Standalone parameter (not part of a component)
+                        param_info = {
+                            "instanceGuid": str(obj.InstanceGuid),
+                            "componentGuid": None,
+                            "name": obj.Name,
+                            "nickName": obj.NickName,
+                            "kind": "standalone",
+                            "dataType": get_typehint_string(obj)
+                        }
+                        # If it's a Panel, attempt to capture its (user) text content
+                        try:
+                            if GHSpecial is not None and isinstance(obj, GHSpecial.GH_Panel):
+                                param_info["isPanel"] = True
+                                try:
+                                    # User-entered text in the panel
+                                    param_info["panelContent"] = str(getattr(obj, "UserText", ""))
+                                except:
+                                    pass
+                                # Useful Panel display flags (best-effort)
+                                try:
+                                    param_info["multiline"] = bool(getattr(obj, "Multiline", False))
+                                except:
+                                    pass
+                                try:
+                                    param_info["wrap"] = bool(getattr(obj, "Wrap", False))
+                                except:
+                                    pass
+                            else:
+                                param_info["isPanel"] = False
+                        except:
+                            # Never fail context collection on panel detection
+                            param_info["isPanel"] = False
+                        
+                        # Add bounds if available
+                        if hasattr(obj, "Attributes") and hasattr(obj.Attributes, "Bounds"):
+                            param_info["bounds"] = _rect_canvas_to_web(obj.Attributes.Bounds)
+                        
+                        params.append(param_info)
+                        
+                        # Collect connections
+                        if hasattr(obj, "Sources"):
+                            for source in obj.Sources:
+                                if source:
+                                    connections.append({
+                                        "from": str(source.InstanceGuid),
+                                        "to": str(obj.InstanceGuid),
+                                        "type": "wire"
+                                    })
+                        
+                        if hasattr(obj, "Recipients"):
+                            for recipient in obj.Recipients:
+                                if recipient:
+                                    connections.append({
+                                        "from": str(obj.InstanceGuid),
+                                        "to": str(recipient.InstanceGuid),
+                                        "type": "wire"
+                                    })
+                
+                except Exception as obj_err:
+                    # Skip objects that cause errors
+                    pass
+            
+            return {
+                "status": "success",
+                "components": components,
+                "params": params,
+                "connections": connections,
+                "meta": {
+                    "componentCount": len(components),
+                    "paramCount": len(params),
+                    "connectionCount": len(connections)
+                }
+            }
+            
+        finally:
+            if canvas and freeze:
+                canvas.Document.Enabled = True
+                if hasattr(canvas, "Refresh"):
+                    canvas.Refresh()
+    
+    except Exception as e:
+        sc.sticky["processing_error"] = "get_context failed: {}".format(str(e))
+        return {"status": "error", "result": "get_context failed: {}".format(str(e))}
+
 
 # --- HTTP Server Logic ---
 
@@ -753,6 +1006,34 @@ def process_command(command_data):
             elif last_err:
                  result["warning"] = "Update success with issues: {}".format(last_err)
 
+            return result
+        
+        elif command_type == "get_context":
+            # Get context data from Grasshopper
+            options = command_data.get("options", {})
+            
+            # Execute on UI thread
+            action = Action(lambda: sc.sticky.update({"__temp_result": get_context(options)}))
+            Rhino.RhinoApp.InvokeOnUiThread(action)
+            
+            # Check if the action completed
+            if "__temp_result" not in sc.sticky:
+                raise RuntimeError("UI thread action for get_context did not complete or store result.")
+            
+            result = sc.sticky.pop("__temp_result", {"status": "error", "result": "UI thread execution failed for get_context"})
+            return result
+        
+        elif command_type == "get_selection":
+            # Get currently selected components in Grasshopper
+            # Execute on UI thread
+            action = Action(lambda: sc.sticky.update({"__temp_result": get_selected_components()}))
+            Rhino.RhinoApp.InvokeOnUiThread(action)
+            
+            # Check if the action completed
+            if "__temp_result" not in sc.sticky:
+                raise RuntimeError("UI thread action for get_selection did not complete or store result.")
+            
+            result = sc.sticky.pop("__temp_result", {"status": "error", "result": "UI thread execution failed for get_selection"})
             return result
 
         else:

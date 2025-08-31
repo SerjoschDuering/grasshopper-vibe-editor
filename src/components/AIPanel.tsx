@@ -2,7 +2,7 @@
 
 import { useAppStore } from '@/store/app-store'
 import { useState, useEffect } from 'react'
-import { getEnabledContextProviders, setContextProviderEnabled } from '@/lib/openai-api'
+import { getEnabledContextProviders, setContextProviderEnabled, type AIContextProvider } from '@/lib/openai-api'
 
 export default function AIPanel() {
   const aiPrompt = useAppStore(state => state.aiPrompt)
@@ -14,7 +14,7 @@ export default function AIPanel() {
   const apiKey = useAppStore(state => state.apiKey)
   
   const [showSettings, setShowSettings] = useState(false)
-  const [contextProviders, setContextProviders] = useState(() => [])
+  const [contextProviders, setContextProviders] = useState<AIContextProvider[]>([])
   const [aiSummary, setAiSummary] = useState('')
   const [showSpeechBubble, setShowSpeechBubble] = useState(false)
   
