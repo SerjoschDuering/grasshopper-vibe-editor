@@ -823,7 +823,8 @@ def socket_server_thread():
 
                 # --- Health Check (lightweight GET) ---
                 if method == "GET" and path == "/healthz":
-                    response = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\nOK"
+                    # Plain health endpoint with permissive CORS + PNA for local access from secure origins
+                    response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Private-Network: true\r\nConnection: close\r\n\r\nOK"
                     conn.sendall(response)
                     continue
 
@@ -887,6 +888,8 @@ def handle_request(method, headers, body):
                 "Access-Control-Allow-Origin": "*", # Or specify origin for tighter security
                 "Access-Control-Allow-Methods": "POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type",
+                # Allow calls from HTTPS pages to local HTTP (Chrome Private Network Access)
+                "Access-Control-Allow-Private-Network": "true",
                 "Access-Control-Max-Age": "86400",
                 "Content-Length": "0"
             }
@@ -925,6 +928,8 @@ def handle_request(method, headers, body):
                  "Content-Type": "application/json",
                  "Content-Length": str(len(response_body)),
                  "Access-Control-Allow-Origin": "*",
+                 # PNA: allow calls from secure contexts to localhost
+                 "Access-Control-Allow-Private-Network": "true",
                  "Connection": "close"
              }
             response_lines = [status_line]

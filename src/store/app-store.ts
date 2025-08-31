@@ -187,7 +187,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Use env var so the deployed app can talk to a tunneled local server
   // e.g. NEXT_PUBLIC_GH_SERVER_URL=https://xxxxx.ngrok.app
   // Fallback to localhost during development
-  __GH_SERVER_URL: (process.env.NEXT_PUBLIC_GH_SERVER_URL as string) || 'http://127.0.0.1:9998',
+  __GH_SERVER_URL: (process.env.NEXT_PUBLIC_GH_SERVER_URL as string) || (typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:9998' : 'http://127.0.0.1:9998') : 'http://127.0.0.1:9998'),
   // Initial state
   code: `# Python code for the Grasshopper component
 # Access inputs using their names if defined, e.g.:
