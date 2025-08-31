@@ -71,7 +71,6 @@ const contextProviders: AIContextProvider[] = [
 # Environment Context
 - Python Version: 2.7 (IronPython)
 - Runtime: Rhino/Grasshopper
-- Available modules: rhinoscriptsyntax (as rs), ghpythonlib, scriptcontext
 - IMPORTANT: Use Python 2.7 syntax only. NO f-strings. Use .format() or % formatting.
 - Always import rhinoscriptsyntax as rs when needed
 - Component inputs are available as variables by their names
@@ -125,23 +124,54 @@ export function setContextProviderEnabled(id: string, enabled: boolean): void {
   }
 }
 
+// Helper: replace ScriptPreview fenced code block in markdown for a component by GUID
+function stripScriptPreview(markdown: string, componentGuid: string, placeholder: string): string {
+  // Find the section corresponding to the component GUID
+  const guidPos = markdown.indexOf(componentGuid)
+  if (guidPos === -1) return markdown
+
+  // Find ScriptPreview after the guid
+  const scriptPreviewHeader = '\n- **ScriptPreview**:'
+  const headerPos = markdown.indexOf(scriptPreviewHeader, guidPos)
+  if (headerPos === -1) return markdown
+
+  // Find the opening code fence after the header
+  const openFencePos = markdown.indexOf('```', headerPos)
+  if (openFencePos === -1) return markdown
+
+  // Find the end of the opening fence line
+  const openFenceLineEnd = markdown.indexOf('\n', openFencePos)
+  if (openFenceLineEnd === -1) return markdown
+
+  // Find the closing code fence
+  const closeFencePos = markdown.indexOf('```', openFenceLineEnd + 1)
+  if (closeFencePos === -1) {
+    // No closing fence found; insert placeholder after opening fence line
+    return markdown.slice(0, openFenceLineEnd + 1) + placeholder + '\n' + markdown.slice(openFenceLineEnd + 1)
+  }
+
+  // Replace the content between fences with the placeholder
+  return markdown.slice(0, openFenceLineEnd + 1) + placeholder + '\n' + markdown.slice(closeFencePos)
+}
+
 function buildSystemPrompt(generateParams: boolean, canvasContext?: string): string {
   const contexts = getEnabledContextProviders()
     .map(p => p.getContext())
     .filter(c => c.length > 0)
     .join('\n\n')
 
-  // Add canvas context if available
-  let enhancedContexts = contexts
+  // Add canvas context if available with clear tags
+  let enhancedContexts = `<context_providers>\n${contexts}\n</context_providers>`
   if (canvasContext) {
-    enhancedContexts = contexts + '\n\n# Canvas Context\n' + canvasContext
+    enhancedContexts += `\n\n<canvas_context>\n${canvasContext}\n</canvas_context>`
   }
 
   const basePrompt = `
-You are an expert Python programmer for Grasshopper components.
+<system_instructions>
+You are an expert Python programmer for Grasshopper components. You will get context and instructions in tagged sections; follow tags strictly.
+</system_instructions>
 
-${enhancedContexts}
-
+<guides>
 # Context System
 This editor provides intelligent context about your Grasshopper canvas:
 - **Canvas Context**: When enabled, you receive information about connected components
@@ -179,12 +209,6 @@ Every component should detect input types to handle data correctly:
 3. Maintain structure: Process nested lists, convert back with th.list_to_tree()
 4. Single items: Wrap in list for uniform processing: [item]
 
-## Type Coercion (Essential for Robust Code)
-- Points: rs.coerce3dpoint(obj) or provide default Point3d(0,0,0)
-- Curves: rs.coercecurve(obj) and check if None
-- Numbers: Use try/except with float() or int()
-- GUIDs: rs.coerceguid(obj) when needed
-- Always validate after coercion
 
 ## Error Handling (Production-Ready Patterns)
 - Check for None/null inputs before processing
@@ -197,40 +221,19 @@ Every component should detect input types to handle data correctly:
 - Always assign results to output parameter variable names
 - Single output: output_name = result
 - Multiple outputs: name each distinctly
-- Trees are assigned directly after conversion
 
-# Example Complete Component Pattern
-Here's a production-ready component structure:
+</guides>
 
-import rhinoscriptsyntax as rs
-import ghpythonlib.treehelpers as th
-
-# Type detection for robust handling
-if hasattr(input_curves, 'BranchCount'):
-    curves_nested = th.tree_to_list(input_curves)
-    # Flatten if needed
-    curves = [c for branch in curves_nested for c in branch]
-elif isinstance(input_curves, list):
-    curves = input_curves
-else:
-    curves = [input_curves] if input_curves else []
-
-# Validate and process
-results = []
-for curve in curves:
-    if curve and rs.IsCurve(curve):
-        # Your processing here
-        result = rs.CurveLength(curve)
-        results.append(result)
-    else:
-        results.append(None)
-
-# Assign to output
-lengths = results
-
-# Task
+<task>
 Generate ${generateParams ? 'Python code AND parameter definitions' : 'Python code only'} based on the user's prompt.
+</task>
 
+<context>
+Here is the immediate context of the component we are working on, this helps you to undertand how its interconnected with other parts of the grasshopper definition
+${enhancedContexts}
+</context>
+
+<requirements>
 # Code Requirements
 1. Use Python 2.7 syntax (NO f-strings, use .format() or % formatting)
 2. Always include type detection for inputs (hasattr for DataTree check)
@@ -240,28 +243,40 @@ Generate ${generateParams ? 'Python code AND parameter definitions' : 'Python co
 6. Assign results to output parameter variables
 7. Maintain tree structure when appropriate
 8. Use proper type coercion (rs.coerce functions)
+</requirements>
 
 ${generateParams ? `
-# Parameter Requirements
+<parameter_requirements>
 1. Infer appropriate input parameters from the prompt
 2. Use descriptive names (lowercase with underscores)
 3. Choose appropriate type hints (str, int, float, bool, point, vector, curve, surface, brep, mesh, generic)
 4. Set appropriate access levels (item, list, tree)
 5. Mark parameters as optional when appropriate
 6. Always include at least one output parameter
+</parameter_requirements>
 ` : ''}
+`
 
-# Response Format
-Return a JSON object with these fields:
+  return basePrompt
+}
+
+function buildResponseContract(generateParams: boolean, userPrompt: string): string {
+  return `
+<response_format>
+Output ONLY a single, valid JSON object. No prose, no markdown, no code fences.
+The JSON MUST have these fields:
 {
   "reasoning": "Brief explanation of your approach",
   "explanation": "<=50 words, with line breaks (use \n between short lines)",
   "description": "1-2 sentence component description for documentation",
   "code": "The complete Python 2.7 code"${generateParams ? ',\n  "param_definitions": [\n    {"type": "input", "name": "param_name", "description": "what it does", "typehint": "str/int/float/etc", "access": "item/list/tree", "optional": true/false},\n    {"type": "output", "name": "result", "description": "what it outputs"}\n  ]' : ''}
 }
-`
+</response_format>
 
-  return basePrompt
+<final_user_instructions>
+${userPrompt}
+</final_user_instructions>
+`
 }
 
 // Removed buildJsonSchema - we're using simple JSON mode instead of strict schemas
@@ -272,19 +287,21 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
   // Validate model
   const modelConfig = MODEL_CONFIG[model as ModelId] || MODEL_CONFIG['gpt-5-mini']
 
-  // Build the user message with current state
-  let userMessage = prompt
+  // Build the user message with clear XML-like markers
+  let userMessage = `<user_instructions> \n THis is very IMPORTANT, this is what your coding tasks is about:\n${prompt}\n</user_instructions>`
   if (state.code && state.code.trim()) {
-    userMessage += `\n\nCurrent code:\n\`\`\`python\n${state.code}\n\`\`\``
+    userMessage += `\n\n<current_code language="python">\n${state.code}\n</current_code>`
   }
   if (state.inputs.length > 0 || state.outputs.length > 0) {
-    userMessage += '\n\nCurrent parameters:'
+    userMessage += '\n\n<current_parameters>'
     state.inputs.forEach(input => {
-      userMessage += `\n- Input: ${input.name} (${input.typehint}, ${input.access}${input.optional ? ', optional' : ''})`
+      const optionalAttr = input.optional ? 'true' : 'false'
+      userMessage += `\n  <input name="${input.name}" typehint="${input.typehint}" access="${input.access}" optional="${optionalAttr}" />`
     })
     state.outputs.forEach(output => {
-      userMessage += `\n- Output: ${output.name}`
+      userMessage += `\n  <output name="${output.name}" />`
     })
+    userMessage += '\n</current_parameters>'
   }
 
   // Generate canvas context if available and enabled
@@ -313,22 +330,31 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
       
       // Generate markdown
       let markdown = generateMarkdownTemplate(slicedContext, detailLevel as any)
-      
-      // Replace selected component's code with placeholder
+
+      // Replace selected component's ScriptPreview code block with placeholder and add a clear banner
       const selectedComp = slicedContext.components.find(c => c.instanceGuid === selectedComponentId)
-      if (selectedComp && selectedComp.scriptContent) {
-        markdown = markdown.replace(
-          selectedComp.scriptContent,
-          '<YOUR_CODE_HERE: This is the component code you are working on - you have it separately>'
-        )
-      }
-      
-      canvasContext = markdown
+      const selectedName = (selectedComp && (selectedComp.nickName || selectedComp.name || selectedComp.kind)) || 'Unknown'
+      markdown = stripScriptPreview(
+        markdown,
+        selectedComponentId,
+        `<YOUR_CODE_HERE: Working on this component. GUID=${selectedComponentId}, Name=${selectedName}>`
+      )
+
+      const banner = [
+        '# Target Component',
+        `- GUID: ${selectedComponentId}`,
+        `- Name: ${selectedName}`,
+        ''
+      ].join('\n')
+
+      canvasContext = banner + '\n' + markdown
     }
   }
 
   // GPT-5 uses the responses API
-  const fullPrompt = buildSystemPrompt(generateParams, canvasContext) + '\n\n' + userMessage
+  const fullPrompt = buildSystemPrompt(generateParams, canvasContext) 
+    + '\n\n' + userMessage
+    + '\n\n' + buildResponseContract(generateParams, prompt)
   const requestBody = {
     model: modelConfig.id,
     input: fullPrompt,
@@ -349,6 +375,12 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
       console.debug('Reasoning effort:', (requestBody as any).reasoning?.effort)
       console.debug('Text format:', (requestBody as any).text?.format)
       console.debug('Input preview:', fullPrompt.slice(0, 300) + (fullPrompt.length > 300 ? '…' : ''))
+      console.groupEnd()
+    } catch {}
+    // Print full prompt for debugging (may be large)
+    try {
+      console.groupCollapsed('[OpenAI] Full prompt (raw)')
+      console.log(fullPrompt)
       console.groupEnd()
     } catch {}
     console.time('openai:responses')

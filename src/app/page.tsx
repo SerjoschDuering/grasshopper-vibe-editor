@@ -117,6 +117,13 @@ export default function Home() {
   const activeTab = useAppStore((state) => state.activeTab)
   const loading = useAppStore((state) => state.loading)
   const aiExplanation = useAppStore((state) => state.aiExplanation)
+  const aiPhase = useAppStore((state) => state.aiPhase)
+  const runtimeIssues = useAppStore((state) => state.runtimeIssues)
+  const setAiPrompt = useAppStore((state) => state.setAiPrompt)
+  const generateWithAI = useAppStore((state) => state.generateWithAI)
+  const selectedRec = useAppStore((s) => s.selectedComponentId ? s.componentsById[s.selectedComponentId] : undefined)
+  const [showErrorPanel, setShowErrorPanel] = useState(false)
+  const hasIssues = !!runtimeIssues && (((runtimeIssues.errors || []).length + (runtimeIssues.warnings || []).length + (runtimeIssues.remarks || []).length) > 0)
 
   // Show bubble while thinking and for 20s after completion
   const [showAIBubble, setShowAIBubble] = useState(false)
@@ -177,15 +184,74 @@ export default function Home() {
                   <i className="fas fa-code text-blue-600 mr-2"></i>
                   Code Editor
                 </h3>
-                <EditorStatusActions />
+                <div className="flex items-center gap-2">
+                  {hasIssues && (
+                    <button
+                      className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-semibold hover:bg-red-700 shadow-sm"
+                      onClick={() => setShowErrorPanel((v) => !v)}
+                      title="Show component runtime errors"
+                    >
+                      Error
+                    </button>
+                  )}
+                  <EditorStatusActions />
+                </div>
               </div>
             </div>
-            <div className="p-0">
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                height="50vh"
-              />
+            <div className={`p-0 editor-aurora ${loading.ai ? 'generating' : aiPhase === 'done' ? 'success' : aiPhase === 'error' ? 'error' : ''}`}>
+              <div className="editor-surface relative">
+                <CodeEditor
+                  value={code}
+                  onChange={setCode}
+                  height="50vh"
+                />
+
+                {/* Runtime error panel (expanded on demand) */}
+                {hasIssues && showErrorPanel && (
+                  <div className="absolute right-6 top-6 z-10 w-[420px] max-w-full">
+                    <div className="rounded-xl shadow-2xl border border-red-300 bg-white overflow-hidden">
+                      <div className="px-4 py-2 bg-red-500 text-white flex items-center justify-between">
+                        <div className="font-semibold">Component Error</div>
+                        <button className="opacity-80 hover:opacity-100" onClick={() => setShowErrorPanel(false)} aria-label="Close">
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                      <div className="p-3">
+                        <div className="text-xs text-gray-600 mb-2">Details</div>
+                        <div className="border rounded bg-gray-50 p-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
+                          <pre className="whitespace-pre-wrap text-sm text-gray-900">
+{[...(runtimeIssues.errors || []), ...(runtimeIssues.warnings || []), ...(runtimeIssues.remarks || [])].join('\n')}
+                          </pre>
+                        </div>
+                      </div>
+                      <div className="px-3 pb-3 flex items-center gap-2">
+                        <button
+                          className="btn btn-sm btn-warning"
+                          onClick={async () => {
+                            const msgs = [
+                              ...(runtimeIssues.errors || []),
+                              ...(runtimeIssues.warnings || []),
+                              ...(runtimeIssues.remarks || [])
+                            ]
+                            const prompt = [
+                              'Fix the Grasshopper Python component errors.',
+                              'Use Python 2.7; keep inputs/outputs compatible.',
+                              'Runtime messages:',
+                              msgs.slice(0, 20).map((m, i) => (i + 1) + '. ' + m).join('\n'),
+                              'Return only corrected code in the response JSON.'
+                            ].join('\n')
+                            setAiPrompt(prompt)
+                            await generateWithAI()
+                          }}
+                        >
+                          Fix with AI
+                        </button>
+                        <button className="btn btn-sm" onClick={() => setShowErrorPanel(false)}>Close</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

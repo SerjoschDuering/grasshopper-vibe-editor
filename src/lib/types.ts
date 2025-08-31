@@ -127,3 +127,10 @@ export interface ComponentRecord {
 }
 
 export type ComponentsById = Record<ComponentId, ComponentRecord>
+
+// Runtime issues surfaced from GH context for the currently selected component
+export interface RuntimeIssues {
+  errors: string[]
+  warnings: string[]
+  remarks?: string[]
+}

@@ -10,7 +10,8 @@ import {
   ComponentDraft,
   ComponentSnapshot,
   ComponentId,
-  ComponentRecord 
+  ComponentRecord,
+  RuntimeIssues 
 } from '@/lib/types'
 import { ModelId } from '@/lib/openai-api'
 import {
@@ -67,6 +68,7 @@ export interface AppState {
   contextLoading: boolean
   contextError: string | null
   contextAutoRefresh: boolean
+  runtimeIssues?: RuntimeIssues | null
   
   // Selection & Traversal
   selectedComponentGuids: string[]
@@ -257,6 +259,7 @@ print("VibeCode Editor Ready")`,
   contextError: null,
   contextAutoRefresh: false,
   contextViewMode: 'selection' as const,
+  runtimeIssues: null,
   
   // Selection & Traversal initial state
   selectedComponentGuids: [],
@@ -516,6 +519,29 @@ print("VibeCode Editor Ready")`,
           if (process.env.NODE_ENV !== 'production') {
             try { console.debug('[GH] poll: no change, skip (id=%s rev=%s)', id, serverRevision) } catch {}
           }
+          // Even if no code/params change, we still want to surface runtime issues.
+          try {
+            const resp = await fetch((get() as any).__GH_SERVER_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'get_context', options: { freezeCanvas: false } })
+            })
+            if (resp.ok) {
+              const ctx = await resp.json()
+              if (ctx && ctx.status === 'success' && Array.isArray(ctx.components)) {
+                const comp = ctx.components.find((c: any) => c.instanceGuid === id)
+                if (comp && comp.runtime) {
+                  const errs = Array.isArray(comp.runtime.errors) ? comp.runtime.errors : []
+                  const warns = Array.isArray(comp.runtime.warnings) ? comp.runtime.warnings : []
+                  const rems = Array.isArray(comp.runtime.remarks) ? comp.runtime.remarks : []
+                  set({ runtimeIssues: { errors: errs, warnings: warns, remarks: rems } })
+                  if (process.env.NODE_ENV !== 'production') {
+                    try { console.debug('[GH] runtime issues updated (errors=%d warnings=%d)', errs.length, warns.length) } catch {}
+                  }
+                }
+              }
+            }
+          } catch {}
           return
         }
 
@@ -523,6 +549,29 @@ print("VibeCode Editor Ready")`,
           try { console.debug('[GH] poll: update received (id=%s rev=%s prev=%s dirty=%s)', id, serverRevision, current?.serverRevision, !!get().componentsById[id]?.draft?.dirty) } catch {}
         }
         get().receiveServerSnapshot(snap)
+        // Refresh runtime issues after snapshot update
+        try {
+          const resp = await fetch((get() as any).__GH_SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'get_context', options: { freezeCanvas: false } })
+          })
+          if (resp.ok) {
+            const ctx = await resp.json()
+            if (ctx && ctx.status === 'success' && Array.isArray(ctx.components)) {
+              const comp = ctx.components.find((c: any) => c.instanceGuid === id)
+              if (comp && comp.runtime) {
+                const errs = Array.isArray(comp.runtime.errors) ? comp.runtime.errors : []
+                const warns = Array.isArray(comp.runtime.warnings) ? comp.runtime.warnings : []
+                const rems = Array.isArray(comp.runtime.remarks) ? comp.runtime.remarks : []
+                set({ runtimeIssues: { errors: errs, warnings: warns, remarks: rems } })
+                if (process.env.NODE_ENV !== 'production') {
+                  try { console.debug('[GH] runtime issues updated (errors=%d warnings=%d)', errs.length, warns.length) } catch {}
+                }
+              }
+            }
+          }
+        } catch {}
 
         if (!get().autoFetch) {
           get().showStatus({ 
@@ -1224,10 +1273,25 @@ output = process_points(points, scale)`
       const data = await response.json()
       
       if (data.status === 'success') {
+        // Extract runtime issues for the selected component (if any)
+        let runtimeIssues: { errors: string[]; warnings: string[] } | null = null
+        try {
+          const selectedId = get().selectedComponentId
+          if (selectedId && Array.isArray(data.components)) {
+            const comp = data.components.find((c: any) => c.instanceGuid === selectedId)
+            if (comp && comp.runtime) {
+              const errs = Array.isArray(comp.runtime.errors) ? comp.runtime.errors : []
+              const warns = Array.isArray(comp.runtime.warnings) ? comp.runtime.warnings : []
+              runtimeIssues = { errors: errs, warnings: warns }
+            }
+          }
+        } catch {}
+
         set({ 
           contextData: data,
           contextLoading: false,
-          contextError: null
+          contextError: null,
+          runtimeIssues
         })
       } else {
         throw new Error(data.result || 'Failed to fetch context')
