@@ -70,6 +70,8 @@ export interface AppState {
     componentCount: number
     estimatedTokens: number
   }
+  // View mode: full graph vs selection subgraph
+  contextViewMode: 'full' | 'selection'
 
   // Sync actions
   setCode: (code: string) => void
@@ -121,6 +123,7 @@ export interface AppState {
   setUpstreamLevels: (levels: number) => void
   setDownstreamLevels: (levels: number) => void
   setContextDetailLevel: (level: 'simple' | 'standard' | 'detailed') => void
+  setContextViewMode: (mode: 'full' | 'selection') => void
   clearSelection: () => void
   addToSelection: (guid: string) => void
   removeFromSelection: (guid: string) => void
@@ -230,6 +233,7 @@ print("VibeCode Editor Ready")`,
   contextLoading: false,
   contextError: null,
   contextAutoRefresh: false,
+  contextViewMode: 'selection' as const,
   
   // Selection & Traversal initial state
   selectedComponentGuids: [],
@@ -1253,6 +1257,7 @@ output = process_points(points, scale)`
     set({ contextDetailLevel: level })
     get().computeContextSize()
   },
+  setContextViewMode: (mode) => set({ contextViewMode: mode }),
   
   clearSelection: () => {
     set({ 

@@ -26,35 +26,29 @@ export function getUpstreamComponents(
   const component = processedContext.componentMap[componentGuid]
   if (!component) return result
   
-  // Find all components that output to this one
-  // Look through all connections to find those targeting this component
+  // Find all components that output to this one, resolving param→component
   for (const connection of processedContext.connections) {
-    if (connection.to === componentGuid && connection.from) {
-      // Find the source component GUID
-      let sourceComponentGuid: string | null = null
-      
-      // Check if the connection.from is a component GUID directly
-      if (processedContext.componentMap[connection.from]) {
-        sourceComponentGuid = connection.from
-      } else {
-        // It might be a parameter GUID, find its parent component
-        for (const param of processedContext.params) {
-          if (param.instanceGuid === connection.from && param.componentGuid) {
-            sourceComponentGuid = param.componentGuid
-            break
-          }
-        }
-      }
-      
-      if (sourceComponentGuid && !visited.has(sourceComponentGuid)) {
-        const upstream = getUpstreamComponents(
-          sourceComponentGuid,
-          levels - 1,
-          processedContext,
-          visited
-        )
-        result.push(...upstream)
-      }
+    // Resolve target component from target param GUID
+    const targetParam = (processedContext as any).paramMap
+      ? (processedContext as any).paramMap[connection.to]
+      : processedContext.params.find(p => p.instanceGuid === connection.to)
+    const targetCompGuid = targetParam && targetParam.componentGuid ? targetParam.componentGuid : null
+    if (targetCompGuid !== componentGuid) continue
+
+    // Resolve source component from source param GUID
+    const sourceParam = (processedContext as any).paramMap
+      ? (processedContext as any).paramMap[connection.from]
+      : processedContext.params.find(p => p.instanceGuid === connection.from)
+    const sourceComponentGuid = sourceParam && sourceParam.componentGuid ? sourceParam.componentGuid : null
+
+    if (sourceComponentGuid && !visited.has(sourceComponentGuid)) {
+      const upstream = getUpstreamComponents(
+        sourceComponentGuid,
+        levels - 1,
+        processedContext,
+        visited
+      )
+      result.push(...upstream)
     }
   }
   
@@ -87,34 +81,29 @@ export function getDownstreamComponents(
   const component = processedContext.componentMap[componentGuid]
   if (!component) return result
   
-  // Find all components that receive output from this one
+  // Find all components that receive output from this one, resolving param→component
   for (const connection of processedContext.connections) {
-    if (connection.from === componentGuid && connection.to) {
-      // Find the target component GUID
-      let targetComponentGuid: string | null = null
-      
-      // Check if the connection.to is a component GUID directly
-      if (processedContext.componentMap[connection.to]) {
-        targetComponentGuid = connection.to
-      } else {
-        // It might be a parameter GUID, find its parent component
-        for (const param of processedContext.params) {
-          if (param.instanceGuid === connection.to && param.componentGuid) {
-            targetComponentGuid = param.componentGuid
-            break
-          }
-        }
-      }
-      
-      if (targetComponentGuid && !visited.has(targetComponentGuid)) {
-        const downstream = getDownstreamComponents(
-          targetComponentGuid,
-          levels - 1,
-          processedContext,
-          visited
-        )
-        result.push(...downstream)
-      }
+    // Resolve source component from source param GUID
+    const sourceParam = (processedContext as any).paramMap
+      ? (processedContext as any).paramMap[connection.from]
+      : processedContext.params.find(p => p.instanceGuid === connection.from)
+    const sourceCompGuid = sourceParam && sourceParam.componentGuid ? sourceParam.componentGuid : null
+    if (sourceCompGuid !== componentGuid) continue
+
+    // Resolve target component from target param GUID
+    const targetParam = (processedContext as any).paramMap
+      ? (processedContext as any).paramMap[connection.to]
+      : processedContext.params.find(p => p.instanceGuid === connection.to)
+    const targetComponentGuid = targetParam && targetParam.componentGuid ? targetParam.componentGuid : null
+    
+    if (targetComponentGuid && !visited.has(targetComponentGuid)) {
+      const downstream = getDownstreamComponents(
+        targetComponentGuid,
+        levels - 1,
+        processedContext,
+        visited
+      )
+      result.push(...downstream)
     }
   }
   
@@ -147,6 +136,9 @@ export function computeContextFromSelection(
     // Get downstream components
     const downstream = getDownstreamComponents(guid, downstreamLevels, processedContext, new Set(visited))
     downstream.forEach(g => contextGuids.add(g))
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    try { console.debug('[Traversal] selected=%o up=%d down=%d → total=%d', selectedGuids, upstreamLevels, downstreamLevels, contextGuids.size) } catch {}
   }
   
   return Array.from(contextGuids)

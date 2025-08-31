@@ -191,8 +191,8 @@ export default function GraphicalView({ processedContext, selectedComponentGuids
       // Draw selection halo for clarity
       if (isCoreSelected || isExtended) {
         ctx.save()
-        ctx.strokeStyle = isCoreSelected ? 'rgba(37,99,235,0.7)' : 'rgba(59,130,246,0.5)'
-        ctx.lineWidth = isCoreSelected ? 6 : 4
+        ctx.strokeStyle = isCoreSelected ? 'rgba(37,99,235,0.75)' : 'rgba(14,165,233,0.7)'
+        ctx.lineWidth = isCoreSelected ? 6 : 5
         ctx.beginPath()
         const rr = 8
         ctx.moveTo(r.x + rr, r.y)
@@ -201,15 +201,15 @@ export default function GraphicalView({ processedContext, selectedComponentGuids
         ctx.arcTo(r.x, r.y + r.height, r.x, r.y, rr)
         ctx.arcTo(r.x, r.y, r.x + r.width, r.y, rr)
         ctx.closePath()
-        ctx.globalAlpha = 0.3
+        ctx.globalAlpha = 0.35
         ctx.stroke()
         ctx.restore()
       }
       
       // Draw parameter box
-      ctx.fillStyle = isCoreSelected ? '#fff7ed' : isExtended ? '#fefce8' : '#f3f4f6'
-      ctx.strokeStyle = isCoreSelected ? '#ea580c' : isExtended ? '#f59e0b' : '#9ca3af'
-      ctx.lineWidth = isCoreSelected ? 2.5 : isExtended ? 2 : 1
+      ctx.fillStyle = isCoreSelected ? '#fff7ed' : isExtended ? '#ecfeff' : '#f3f4f6'
+      ctx.strokeStyle = isCoreSelected ? '#ea580c' : isExtended ? '#0ea5e9' : '#9ca3af'
+      ctx.lineWidth = isCoreSelected ? 2.5 : isExtended ? 2.25 : 1
       
       // Rounded rectangle
       const radius = 4
@@ -257,24 +257,24 @@ export default function GraphicalView({ processedContext, selectedComponentGuids
       let strokeColor = '#6b7280'
       
       if (comp.isScript) {
-        fillColor = isCoreSelected ? '#dce7fc' : isExtended ? '#eaf2ff' : '#e8f0fe'
-        strokeColor = isCoreSelected ? '#2563eb' : isExtended ? '#60a5fa' : '#3b82f6'
+        fillColor = isCoreSelected ? '#dce7fc' : isExtended ? '#e0f2fe' : '#e8f0fe'
+        strokeColor = isCoreSelected ? '#2563eb' : isExtended ? '#0ea5e9' : '#3b82f6'
       } else if (comp.category?.toLowerCase().includes('params')) {
-        fillColor = isCoreSelected ? '#f0fdf4' : isExtended ? '#f4fce8' : '#f7fee7'
-        strokeColor = isCoreSelected ? '#16a34a' : isExtended ? '#84cc16' : '#a3e635'
+        fillColor = isCoreSelected ? '#f0fdf4' : isExtended ? '#ecfeff' : '#f7fee7'
+        strokeColor = isCoreSelected ? '#16a34a' : isExtended ? '#0ea5e9' : '#a3e635'
       } else if (comp.category?.toLowerCase().includes('maths')) {
-        fillColor = isCoreSelected ? '#fef3c7' : isExtended ? '#fff3cd' : '#fef9c3'
-        strokeColor = isCoreSelected ? '#f59e0b' : isExtended ? '#fbbf24' : '#facc15'
+        fillColor = isCoreSelected ? '#fef3c7' : isExtended ? '#e0f2fe' : '#fef9c3'
+        strokeColor = isCoreSelected ? '#f59e0b' : isExtended ? '#0ea5e9' : '#facc15'
       } else {
-        fillColor = isCoreSelected ? '#e0e7ff' : isExtended ? '#e8ecff' : '#ede9fe'
-        strokeColor = isCoreSelected ? '#6366f1' : isExtended ? '#93c5fd' : '#8b5cf6'
+        fillColor = isCoreSelected ? '#e0e7ff' : isExtended ? '#e0f2fe' : '#ede9fe'
+        strokeColor = isCoreSelected ? '#6366f1' : isExtended ? '#0ea5e9' : '#8b5cf6'
       }
       
       // Draw selection halo for clarity
       if (isCoreSelected || isExtended) {
         ctx.save()
-        ctx.strokeStyle = isCoreSelected ? 'rgba(37,99,235,0.7)' : 'rgba(59,130,246,0.5)'
-        ctx.lineWidth = isCoreSelected ? 8 : 5
+        ctx.strokeStyle = isCoreSelected ? 'rgba(37,99,235,0.7)' : 'rgba(14,165,233,0.7)'
+        ctx.lineWidth = isCoreSelected ? 8 : 6
         ctx.beginPath()
         const rr = 10
         ctx.moveTo(r.x + rr, r.y)
@@ -283,7 +283,7 @@ export default function GraphicalView({ processedContext, selectedComponentGuids
         ctx.arcTo(r.x, r.y + r.height, r.x, r.y, rr)
         ctx.arcTo(r.x, r.y, r.x + r.width, r.y, rr)
         ctx.closePath()
-        ctx.globalAlpha = 0.25
+        ctx.globalAlpha = 0.3
         ctx.stroke()
         ctx.restore()
       }
@@ -347,7 +347,8 @@ export default function GraphicalView({ processedContext, selectedComponentGuids
     const legendY = dimensions.height - 30
     ctx.fillText(`Components: ${components.length}`, 10, legendY)
     ctx.fillText(`Parameters: ${standaloneParams.length}`, 120, legendY)
-    ctx.fillText(`Selected: ${selectedComponentGuids.length}`, 230, legendY)
+    const totalSel = selectedComponentGuids.length + extendedSelectedGuids.length
+    ctx.fillText(`Selected: ${totalSel} (core ${selectedComponentGuids.length}, ext ${extendedSelectedGuids.length})`, 230, legendY)
     if (extendedSelectedGuids.length > 0) {
       ctx.fillText(`Extended: ${extendedSelectedGuids.length}`, 330, legendY)
     }
