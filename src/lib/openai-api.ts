@@ -224,6 +224,12 @@ Every component should detect input types to handle data correctly:
 
 </guides>
 
+<tools>
+You can call a remote MCP server labeled "context7" to fetch up-to-date library docs and code snippets when API details are uncertain.
+- Preferred tools: resolve-library-id → get-library-docs.
+- Summarize what you looked up briefly in the reasoning field.
+</tools>
+
 <task>
 Generate ${generateParams ? 'Python code AND parameter definitions' : 'Python code only'} based on the user's prompt.
 </task>
@@ -362,6 +368,15 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
     text: {
       format: { type: 'json_object' as const }
     },
+    tools: [
+      {
+        type: 'mcp',
+        server_label: 'context7',
+        server_url: 'https://mcp.context7.com/mcp',
+        allowed_tools: ['resolve-library-id', 'get-library-docs']
+      }
+    ],
+    tool_choice: 'auto',
     max_output_tokens: Math.min(16000, modelConfig.maxOutput)
   }
   const apiEndpoint = 'https://api.openai.com/v1/responses'
