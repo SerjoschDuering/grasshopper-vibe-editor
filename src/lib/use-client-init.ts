@@ -7,6 +7,7 @@ export function useClientInit() {
     const savedAutoFetch = localStorage.getItem('autoFetch')
     const savedApiKey = localStorage.getItem('apiKey')
     const savedCollapsed = localStorage.getItem('collapsedCards')
+    const savedAiModel = localStorage.getItem('aiModel')
     
     const store = useAppStore.getState()
     if (savedAutoFetch === 'true') {
@@ -21,6 +22,11 @@ export function useClientInit() {
     if (savedApiKey) {
       // Don't trigger setApiKey to avoid re-saving to localStorage
       useAppStore.setState({ apiKey: savedApiKey })
+    }
+    
+    if (savedAiModel && ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'].includes(savedAiModel)) {
+      // Don't trigger setAiModel to avoid re-saving to localStorage
+      useAppStore.setState({ aiModel: savedAiModel as any })
     }
     
     if (savedCollapsed) {

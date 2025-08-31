@@ -14,9 +14,11 @@ VibeCode is a .. vibe coded .. interface for editing GHPython components that el
 ## Key Features
 
 - **Real-time synchronization** between the web editor and Grasshopper
-- **AI-powered code generation** using your OpenAI API key
+- **AI-powered code generation** with GPT-5 models (nano, mini, full)
+- **Context-aware AI** that understands your canvas connections and component relationships
 - **Add, modify, or remove** input and output parameters visually
 - **Auto-fetch** selected components from your Grasshopper canvas
+- **Canvas Context System** provides AI with information about connected components
 - **Syntax highlighting** and modern code editing features
 - **Instant deployment** of changes back to Grasshopper
 
@@ -32,10 +34,24 @@ VibeCode is a .. vibe coded .. interface for editing GHPython components that el
 ## Using AI Code Generation
 
 1. Enter your OpenAI API key in the configuration section
-2. Type a prompt describing what you want to create
-3. Toggle "Generate/Update Input/Output Parameters" if you want the AI to handle parameter creation
-4. Click "Generate Code with AI"
-5. Review and send changes back to Grasshopper with "Send to GH"
+2. Select your preferred model:
+   - **GPT-5 Nano**: Fastest and most cost-effective ($0.05/$0.40 per 1M tokens)
+   - **GPT-5 Mini**: Balanced performance ($0.25/$2.00 per 1M tokens)
+   - **GPT-5**: Most capable with full context support ($1.25/$10.00 per 1M tokens)
+3. Type a prompt describing what you want to create
+4. Toggle "Generate/Update Input/Output Parameters" if you want the AI to handle parameter creation
+5. Enable "Canvas State" context provider for AI to understand connected components
+6. Click "Generate Code with AI"
+7. Review and send changes back to Grasshopper with "Send to GH"
+
+### Context System
+
+The Canvas Context feature provides AI with intelligent information about your Grasshopper definition:
+- **Automatic Detection**: Identifies components connected to your selected component (±1 level)
+- **Medium Detail**: Component names, types, parameters, and connections
+- **Full Detail (GPT-5)**: Includes script contents from connected components
+- **Smart Filtering**: Only relevant components are included to optimize token usage
+- This context helps AI generate code that properly integrates with your existing data flow
 
 ## Requirements
 

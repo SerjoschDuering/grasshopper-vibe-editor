@@ -2,37 +2,29 @@
 
 import { useAppStore } from '@/store/app-store'
 import { useState, useEffect } from 'react'
-import { getEnabledContextProviders, setContextProviderEnabled, type AIContextProvider } from '@/lib/openai-api'
+import { getEnabledContextProviders, setContextProviderEnabled, MODEL_CONFIG, type AIContextProvider, type ModelId } from '@/lib/openai-api'
 
 export default function AIPanel() {
   const aiPrompt = useAppStore(state => state.aiPrompt)
   const setAiPrompt = useAppStore(state => state.setAiPrompt)
   const aiGenerateParams = useAppStore(state => state.aiGenerateParams)
   const setAiGenerateParams = useAppStore(state => state.setAiGenerateParams)
+  const aiModel = useAppStore(state => state.aiModel)
+  const setAiModel = useAppStore(state => state.setAiModel)
   const generateWithAI = useAppStore(state => state.generateWithAI)
   const loading = useAppStore(state => state.loading)
   const apiKey = useAppStore(state => state.apiKey)
+  const aiExplanation = useAppStore(state => state.aiExplanation)
   
   const [showSettings, setShowSettings] = useState(false)
   const [contextProviders, setContextProviders] = useState<AIContextProvider[]>([])
-  const [aiSummary, setAiSummary] = useState('')
-  const [showSpeechBubble, setShowSpeechBubble] = useState(false)
   
   // Initialize context providers after mount
   useEffect(() => {
     setContextProviders(getEnabledContextProviders())
   }, [])
 
-  // Show speech bubble when AI completes
-  useEffect(() => {
-    if (aiSummary && !loading.ai) {
-      setShowSpeechBubble(true)
-      const timer = setTimeout(() => {
-        setShowSpeechBubble(false)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [aiSummary, loading.ai])
+  // (Speech bubble handled in page header; none here)
 
   const handleGenerateAI = async () => {
     if (!apiKey) {
@@ -53,9 +45,7 @@ export default function AIPanel() {
       return
     }
 
-    setAiSummary('Thinking...')
     await generateWithAI()
-    setAiSummary('Code generated successfully!')
   }
 
   const toggleProvider = (providerId: string) => {
@@ -88,6 +78,8 @@ export default function AIPanel() {
           </div>
         </div>
       )}
+
+      {/* Model selection moved to header pill */}
 
       {/* Prompt Input */}
       <div className="mb-3">
@@ -143,13 +135,7 @@ export default function AIPanel() {
         )}
       </button>
 
-      {/* AI Speech Bubble */}
-      {showSpeechBubble && (
-        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-          <i className="fas fa-robot mr-1 text-xs"></i>
-          {aiSummary}
-        </div>
-      )}
+      {/* (Bubble rendered above; no inline version here) */}
     </div>
   )
 }

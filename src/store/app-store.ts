@@ -12,6 +12,7 @@ import {
   ComponentId,
   ComponentRecord 
 } from '@/lib/types'
+import { ModelId } from '@/lib/openai-api'
 import {
   getSelectedComponent,
   getComponentByGuid,
@@ -48,6 +49,12 @@ export interface AppState {
   // AI
   aiPrompt: string
   aiGenerateParams: boolean
+  aiModel: ModelId
+  aiExplanation?: string
+  aiComponentDescription?: string
+  aiPhase?: 'building_prompt' | 'requesting' | 'done' | 'error'
+  aiStartedAt?: number
+  aiElapsedMs?: number
 
   // UI
   loading: LoadingFlags
@@ -79,6 +86,7 @@ export interface AppState {
   setApiKey: (key: string) => void
   setAiPrompt: (prompt: string) => void
   setAiGenerateParams: (on: boolean) => void
+  setAiModel: (model: ModelId) => void
 
   addInput: () => void
   addOutput: () => void
@@ -145,6 +153,10 @@ const getInitialAutoFetch = (): boolean => {
 
 const getInitialApiKey = (): string => {
   return ''
+}
+
+const getInitialAiModel = (): ModelId => {
+  return 'gpt-5-mini'
 }
 
 const getInitialCollapsedCards = (): Set<string> => {
@@ -222,6 +234,7 @@ print("VibeCode Editor Ready")`,
   
   aiPrompt: '',
   aiGenerateParams: false,
+  aiModel: getInitialAiModel(),
   
   loading: {
     ai: false,
@@ -231,6 +244,11 @@ print("VibeCode Editor Ready")`,
   },
   status: undefined,
   collapsedCards: getInitialCollapsedCards(),
+  aiExplanation: undefined,
+  aiComponentDescription: undefined,
+  aiPhase: undefined,
+  aiStartedAt: undefined,
+  aiElapsedMs: 0,
   
   // Context Tab initial state
   activeTab: 'coding' as const,
@@ -268,6 +286,12 @@ print("VibeCode Editor Ready")`,
   },
   setAiPrompt: (prompt) => set({ aiPrompt: prompt }),
   setAiGenerateParams: (on) => set({ aiGenerateParams: on }),
+  setAiModel: (model) => {
+    set({ aiModel: model })
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aiModel', model)
+    }
+  },
 
   addInput: () => {
     const newInput: InputParameter = {
@@ -577,6 +601,7 @@ print("VibeCode Editor Ready")`,
         type: 'update_script' as const,
         instance_guid: state.targetGuid,
         code: state.code,
+        description: state.aiComponentDescription || undefined,
         param_definitions: paramDefinitions
       }
       
@@ -660,9 +685,19 @@ print("VibeCode Editor Ready")`,
       return
     }
     
+    // Start AI timing + phase
+    const startedAt = Date.now()
     set(state => ({ 
-      loading: { ...state.loading, ai: true } 
+      loading: { ...state.loading, ai: true },
+      aiPhase: 'building_prompt',
+      aiStartedAt: startedAt,
+      aiElapsedMs: 0
     }))
+    let tickId: any = setInterval(() => {
+      const s = get()
+      if (!s.loading.ai || !s.aiStartedAt) return
+      set({ aiElapsedMs: Date.now() - s.aiStartedAt })
+    }, 250)
     
     get().showStatus({ 
       message: 'Generating with AI...', 
@@ -670,6 +705,7 @@ print("VibeCode Editor Ready")`,
     })
     
     try {
+      set({ aiPhase: 'requesting' })
       const result = await callOpenAI({
         prompt: state.aiPrompt,
         apiKey: state.apiKey,
@@ -678,12 +714,19 @@ print("VibeCode Editor Ready")`,
           inputs: state.inputs,
           outputs: state.outputs
         },
-        generateParams: state.aiGenerateParams
+        generateParams: state.aiGenerateParams,
+        model: state.aiModel,
+        contextData: state.contextData,
+        selectedComponentId: state.selectedComponentId || undefined
       })
       
       // Update code via the same path as user edits (respects draft selection)
       get().setCode(result.code)
-      
+      // Save AI explanation and component description
+      set({ aiExplanation: result.explanation, aiComponentDescription: result.description })
+      // Save AI explanation and component description
+      set({ aiExplanation: result.explanation, aiComponentDescription: result.description })
+
       // Update parameters if requested
       if (state.aiGenerateParams && result.param_definitions) {
         const newInputs: InputParameter[] = []
@@ -737,6 +780,7 @@ print("VibeCode Editor Ready")`,
         }
       }
       
+      set({ aiPhase: 'done' })
       get().showStatus({ 
         message: 'AI generation complete', 
         type: 'success',
@@ -744,14 +788,16 @@ print("VibeCode Editor Ready")`,
       })
     } catch (error) {
       console.error('AI generation error:', error)
+      set({ aiPhase: 'error' })
       get().showStatus({ 
         message: `AI error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
         type: 'error',
         duration: 5000 
       })
     } finally {
+      clearInterval(tickId)
       set(state => ({ 
-        loading: { ...state.loading, ai: false } 
+        loading: { ...state.loading, ai: false }
       }))
     }
   },

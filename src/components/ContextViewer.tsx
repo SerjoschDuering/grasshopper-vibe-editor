@@ -14,7 +14,6 @@ interface Props {
 
 export default function ContextViewer({ processedContext, filteredComponents, selectedComponentGuids: selectedGuidsProp, extendedSelectedGuids = [] }: Props) {
   const [format, setFormat] = useState<'markdown' | 'json' | 'xml'>('markdown')
-  const [showTemplateModal, setShowTemplateModal] = useState(false)
   const contextDetailLevel = useAppStore(state => state.contextDetailLevel)
   const showStatus = useAppStore(state => state.showStatus)
   const selectedComponentGuidsFromStore = useAppStore(state => state.selectedComponentGuids)
@@ -55,10 +54,12 @@ export default function ContextViewer({ processedContext, filteredComponents, se
   }
   
   const handlePromptTemplate = () => {
-    // TODO: Implement modal for prompt template
-    setShowTemplateModal(true)
-    showStatus({ message: 'Prompt template modal coming soon!', type: 'info', duration: 2000 })
-    setTimeout(() => setShowTemplateModal(false), 100)
+    // Copy content to clipboard with a message about using it as a prompt
+    navigator.clipboard.writeText(content).then(() => {
+      showStatus({ message: 'Context copied! You can now paste it into your AI prompt.', type: 'success', duration: 3000 })
+    }).catch(() => {
+      showStatus({ message: 'Failed to copy context', type: 'error', duration: 3000 })
+    })
   }
   
   return (

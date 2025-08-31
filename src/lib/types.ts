@@ -85,6 +85,7 @@ export interface AIResponse {
   reasoning?: string
   code: string
   description: string
+  explanation?: string
   param_definitions?: GrasshopperParameterDefinition[]
 }
 

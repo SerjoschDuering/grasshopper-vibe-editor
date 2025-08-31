@@ -5,10 +5,12 @@ import InputParameters from '@/components/InputParameters'
 import OutputParameters from '@/components/OutputParameters'
 import ConfigPanel from '@/components/ConfigPanel'
 import AIPanel from '@/components/AIPanel'
+import ModelSelector from '@/components/ModelSelector'
 import TabNavigation from '@/components/TabNavigation'
 import ContextPanel from '@/components/ContextPanel'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
+import { useState, useEffect } from 'react'
 
 function EditorStatusActions() {
   const selectedId = useAppStore(s => s.selectedComponentId)
@@ -113,6 +115,23 @@ export default function Home() {
   const apiKey = useAppStore((state) => state.apiKey)
   const setApiKey = useAppStore((state) => state.setApiKey)
   const activeTab = useAppStore((state) => state.activeTab)
+  const loading = useAppStore((state) => state.loading)
+  const aiExplanation = useAppStore((state) => state.aiExplanation)
+
+  // Show bubble while thinking and for 20s after completion
+  const [showAIBubble, setShowAIBubble] = useState(false)
+  useEffect(() => {
+    if (loading.ai) {
+      setShowAIBubble(true)
+      return
+    }
+    if (aiExplanation) {
+      setShowAIBubble(true)
+      const t = setTimeout(() => setShowAIBubble(false), 20000)
+      return () => clearTimeout(t)
+    }
+    setShowAIBubble(false)
+  }, [loading.ai, aiExplanation])
 
   return (
     <div className="space-y-4">
@@ -172,10 +191,23 @@ export default function Home() {
 
           <div className="card">
             <div className="card-header bg-white p-4 border-b">
-              <div className="flex items-center justify-between">
+              <div className="relative flex items-center justify-between">
                 <h3 className="flex items-center text-lg font-semibold mb-0">
-                  <i className="fas fa-robot text-blue-600 mr-2"></i>
+                  <span className="relative inline-flex items-center">
+                    <i className="fas fa-robot text-blue-600 mr-2"></i>
+                    {showAIBubble && (
+                      <div className="absolute left-0 -top-2" style={{ transform: 'translateY(-100%)' }}>
+                        <div className="relative">
+                          <div className="px-3 py-1.5 bg-indigo-50 border border-indigo-300 rounded text-xs text-indigo-800 shadow whitespace-normal break-words inline-block" style={{ width: '200px' }}>
+                            {(loading.ai ? 'Thinking...' : (aiExplanation || 'Code generated successfully!')).replace(/\s+/g, ' ').trim()}
+                          </div>
+                          <div className="absolute left-4 -bottom-1 w-3 h-3 bg-indigo-50 border-l border-b border-indigo-300 rotate-45"></div>
+                        </div>
+                      </div>
+                    )}
+                  </span>
                   AI Assistant
+                  <ModelSelector />
                 </h3>
                 <div className="flex items-center gap-2">
                   <label htmlFor="api-key-header" className="text-xs text-gray-600">
@@ -190,6 +222,7 @@ export default function Home() {
                     className="w-32 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
+                {/* Bubble is anchored to the icon above */}
               </div>
             </div>
             <div className="p-4">
