@@ -225,9 +225,11 @@ Every component should detect input types to handle data correctly:
 </guides>
 
 <tools>
-You can call a remote MCP server labeled "context7" to fetch up-to-date library docs and code snippets when API details are uncertain.
-- Preferred tools: resolve-library-id → get-library-docs.
-- Summarize what you looked up briefly in the reasoning field.
+Tool use policy for remote MCP "context7":
+- Only call this tool if the user explicitly mentions "context7" in their request.
+- When used, prioritize queries about "Grasshopper API" and "RhinoCommon" types/methods.
+- Preferred flow: resolve-library-id → get-library-docs.
+- Keep calls minimal; summarize any lookups briefly in the reasoning.
 </tools>
 
 <task>

@@ -236,6 +236,7 @@ export default function Home() {
                             const prompt = [
                               'Fix the Grasshopper Python component errors.',
                               'Use Python 2.7; keep inputs/outputs compatible.',
+                              'If unsure about RhinoCommon/Grasshopper API syntax or methods, and the user mentioned context7, use context7 MCP to look up details before fixing.',
                               'Runtime messages:',
                               msgs.slice(0, 20).map((m, i) => (i + 1) + '. ' + m).join('\n'),
                               'Return only corrected code in the response JSON.'
