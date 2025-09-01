@@ -57,6 +57,30 @@
         </div>
     </section>
 
+    <!-- Security Notice Section -->
+    <section class="py-4 bg-warning-subtle">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-10 mx-auto">
+                    <div class="alert alert-warning border-0 shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-shield-alt me-3 text-warning" style="font-size: 2rem;"></i>
+                            <div>
+                                <h5 class="alert-heading mb-2">📱 Security Notice</h5>
+                                <p class="mb-2">macOS and Windows will show security warnings because this app isn't code-signed (requires $99-400/year certificates).</p>
+                                <p class="mb-0">
+                                    <strong>Don't worry!</strong> This is normal for free open-source apps. 
+                                    <a href="#troubleshooting" class="alert-link">See installation help below ↓</a> or 
+                                    <a href="#developers" class="alert-link">run locally instead</a>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Features Section -->
     <section class="py-5">
         <div class="container">
@@ -98,8 +122,8 @@
                                 <div class="card-body">
                                     <h5><i class="fas fa-download text-primary"></i> Step 1: Download & Install</h5>
                                     <ol>
-                                        <li>Download the app for your Mac type</li>
-                                        <li>Install the .dmg like any Mac app</li>
+                                        <li>Download the app for your platform above</li>
+                                        <li>Install (you'll see security warnings - <a href="#troubleshooting">see help below</a>)</li>
                                         <li>Download the <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/gh_client_snippet.gh">Grasshopper component</a></li>
                                     </ol>
                                 </div>
@@ -145,6 +169,141 @@
                                 <li>Grasshopper plugin</li>
                                 <li>Python scripting enabled</li>
                             </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Troubleshooting Section -->
+    <section id="troubleshooting" class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-10 mx-auto">
+                    <h2 class="text-center mb-5"><i class="fas fa-tools text-primary"></i> Installation Troubleshooting</h2>
+                    
+                    <div class="row">
+                        <!-- macOS Troubleshooting -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fab fa-apple"></i> macOS Security Warning</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <strong>Error:</strong> "VibeCode Grasshopper Editor is damaged and can't be opened"
+                                    </div>
+                                    <h6>Solution:</h6>
+                                    <ol class="mb-3">
+                                        <li>Go to <strong>System Settings</strong> → <strong>Privacy & Security</strong></li>
+                                        <li>Scroll to the <strong>Security</strong> section</li>
+                                        <li>Look for the blocked app message</li>
+                                        <li>Click <strong>"Open Anyway"</strong></li>
+                                        <li>Click <strong>"Open"</strong> in the confirmation dialog</li>
+                                    </ol>
+                                    <p class="mb-2">
+                                        <a href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac" 
+                                           target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-external-link-alt"></i> Apple's Official Guide
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Windows Troubleshooting -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fab fa-windows"></i> Windows SmartScreen</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <strong>Warning:</strong> "Windows protected your PC"
+                                    </div>
+                                    <h6>Solution:</h6>
+                                    <ol class="mb-3">
+                                        <li>Click <strong>"More info"</strong> in the SmartScreen dialog</li>
+                                        <li>Click <strong>"Run anyway"</strong></li>
+                                        <li>The installer will proceed normally</li>
+                                        <li>Some antivirus may also show warnings - these are false positives</li>
+                                    </ol>
+                                    <p class="mb-2">
+                                        <a href="https://support.microsoft.com/en-us/windows/how-to-help-protect-your-pc-with-windows-defender-smartscreen-1c9a1b71-4dea-4d23-9a86-8b16dd22e4b9" 
+                                           target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-external-link-alt"></i> Microsoft's Official Guide
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-lg-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> Why do these warnings appear?</h6>
+                                <p class="mb-0">
+                                    Code signing certificates cost $99-400/year per platform. As a free, open-source project, 
+                                    we don't purchase these certificates. The app is completely safe - it's just not "officially blessed" 
+                                    by Apple/Microsoft. This is standard for many popular open-source desktop applications.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Developers Section -->
+    <section id="developers" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-10 mx-auto text-center">
+                    <h2 class="mb-4"><i class="fas fa-code-branch text-success"></i> For Developers: Run Locally</h2>
+                    <p class="lead mb-4">Skip security warnings entirely by running from source code</p>
+                    
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body text-start">
+                                    <h5><i class="fab fa-git-alt"></i> Clone & Run</h5>
+                                    <div class="bg-dark text-light p-3 rounded mb-3">
+                                        <code>
+                                            git clone https://github.com/SerjoschDuering/grasshopper-vibe-editor.git<br>
+                                            cd grasshopper-vibe-editor<br>
+                                            npm install<br>
+                                            npm run electron:dev
+                                        </code>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor" 
+                                           class="btn btn-success" target="_blank">
+                                            <i class="fab fa-github"></i> View on GitHub
+                                        </a>
+                                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/archive/refs/heads/main.zip" 
+                                           class="btn btn-outline-success" target="_blank">
+                                            <i class="fas fa-download"></i> Download Source ZIP
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-check-circle"></i> Benefits of Running Locally:</h6>
+                                <ul class="mb-0 text-start">
+                                    <li>No security warnings or installation hassles</li>
+                                    <li>Always get the latest features and bug fixes</li>
+                                    <li>Easy to modify and customize the code</li>
+                                    <li>Contribute back to the project</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
