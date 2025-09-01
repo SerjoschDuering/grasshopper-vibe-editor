@@ -76,7 +76,7 @@ export interface AppState {
   collapsedCards: Set<string>
   
   // Context Tab
-  activeTab: 'coding' | 'context'
+  activeTab: 'coding' | 'context' | 'docs'
   contextData: any | null
   contextLoading: boolean
   contextError: string | null
@@ -140,7 +140,7 @@ export interface AppState {
   reorderOutputs: (activeId: string, overId: string) => void
   
   // Context Tab actions
-  setActiveTab: (tab: 'coding' | 'context') => void
+  setActiveTab: (tab: 'coding' | 'context' | 'docs') => void
   setContextData: (data: any) => void
   fetchContext: () => Promise<void>
   toggleContextAutoRefresh: () => void
@@ -836,7 +836,10 @@ print("VibeCode Editor Ready")`,
         // 1) Replace any existing ghenv.Component.Description = "..." occurrences
         //    Handles both single and double quoted strings conservatively
         const descAssignRegex = /(ghenv\.Component\.Description\s*=\s*)(["'])(?:[^"'\\]|\\.|\n)*?\2/g
-        if (desc.length > 0 && descAssignRegex.test(codeFromAI)) {
+        const hasExistingDescAssignment = descAssignRegex.test(codeFromAI)
+        if (desc.length > 0 && hasExistingDescAssignment) {
+          // Reset regex pointer before replace
+          descAssignRegex.lastIndex = 0
           codeFromAI = codeFromAI.replace(descAssignRegex, '$1' + pyDesc)
         } else {
           // 2) If a VibeCode marker block exists, update inside it

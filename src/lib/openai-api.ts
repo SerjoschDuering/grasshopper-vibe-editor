@@ -211,16 +211,17 @@ Every component should detect input types to handle data correctly:
 
 
 ## Error Handling (Production-Ready Patterns)
-- Check for None/null inputs before processing
-- Validate geometry: rs.IsPoint(), rs.IsCurve(), etc.
 - Use try/except blocks for complex operations
 - Provide meaningful error messages with print()
 - Return empty lists or default values on error
 
+## FORBIDDEN Patterns
+- NEVER use globals() - component variables are already in scope
+- NEVER use eval() or exec() - security risk and unnecessary
+
 ## Output Assignment
 - Always assign results to output parameter variable names
 - Single output: output_name = result
-- Multiple outputs: name each distinctly
 
 </guides>
 

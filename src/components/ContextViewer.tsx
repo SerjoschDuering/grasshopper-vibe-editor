@@ -117,8 +117,9 @@ export default function ContextViewer({ processedContext, filteredComponents, se
             <div 
               className="bg-gray-50 border rounded p-4 font-mono text-xs overflow-auto"
               style={{ 
-                maxHeight: '600px',
-                minHeight: '400px'
+                maxHeight: '1000px',
+                minHeight: '1000px',
+                height: '1000px'
               }}
             >
               <pre className="whitespace-pre-wrap">{content}</pre>
@@ -126,7 +127,7 @@ export default function ContextViewer({ processedContext, filteredComponents, se
           </div>
           {/* Graphical view (2/3) */}
           <div className="w-2/3">
-            <div className="border rounded bg-white" style={{ height: '600px' }}>
+            <div className="border rounded bg-white" style={{ height: '1000px' }}>
               <GraphicalView 
                 processedContext={processedContext}
                 selectedComponentGuids={selectedComponentGuids}

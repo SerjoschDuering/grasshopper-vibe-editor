@@ -56,6 +56,25 @@ export default function AppHeader() {
           <i className="fas fa-project-diagram mr-2.5"></i>
           Context
         </button>
+
+        <button
+          className={`
+            flex items-center px-6 py-3 font-medium transition-all duration-200
+            ${activeTab === 'docs' ? 'shadow-sm' : 'hover:bg-white hover:bg-opacity-50'}
+          `}
+          style={{
+            fontSize: '15px',
+            color: activeTab === 'docs' ? 'var(--primary-color)' : 'var(--text-muted)',
+            backgroundColor: activeTab === 'docs' ? 'var(--card-bg)' : 'transparent',
+            borderRadius: 'var(--border-radius)',
+            fontWeight: activeTab === 'docs' ? '600' : '500',
+            boxShadow: activeTab === 'docs' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+          }}
+          onClick={() => setActiveTab('docs')}
+        >
+          <i className="fas fa-book mr-2.5"></i>
+          Docs
+        </button>
       </div>
     </div>
   )

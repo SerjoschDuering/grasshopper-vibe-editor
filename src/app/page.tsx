@@ -7,6 +7,7 @@ import ConfigPanel from '@/components/ConfigPanel'
 import AIPanel from '@/components/AIPanel'
 import ModelSelector from '@/components/ModelSelector'
 import ContextPanel from '@/components/ContextPanel'
+import DocsPanel from '@/components/DocsPanel'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
@@ -326,10 +327,15 @@ export default function Home() {
         </div>
       </div>
         </>
-      ) : (
+      ) : activeTab === 'context' ? (
         /* Context Tab */
         <ErrorBoundary>
           <ContextPanel />
+        </ErrorBoundary>
+      ) : (
+        /* Docs Tab */
+        <ErrorBoundary>
+          <DocsPanel />
         </ErrorBoundary>
       )}
     </div>

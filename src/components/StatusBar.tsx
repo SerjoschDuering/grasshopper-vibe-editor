@@ -21,7 +21,7 @@ export default function StatusBar() {
 
   const getStatusClass = () => {
     const baseClass = 'status-message alert mt-3 animate-fadeIn'
-    switch (status.type) {
+    switch (status?.type) {
       case 'success':
         return `${baseClass} alert-success`
       case 'error':
@@ -35,7 +35,7 @@ export default function StatusBar() {
   }
 
   const getIcon = () => {
-    switch (status.type) {
+    switch (status?.type) {
       case 'success':
         return 'fa-check-circle'
       case 'error':
@@ -68,7 +68,7 @@ export default function StatusBar() {
         </div>
       )}
 
-      {runtimeIssues && (runtimeIssues.errors?.length > 0 || runtimeIssues.warnings?.length > 0 || runtimeIssues.remarks?.length > 0) && (
+      {runtimeIssues && (runtimeIssues.errors?.length > 0 || runtimeIssues.warnings?.length > 0 || (runtimeIssues.remarks?.length || 0) > 0) && (
         <div className="alert alert-danger">
           <div className="flex items-start justify-between">
             <div>
@@ -93,11 +93,11 @@ export default function StatusBar() {
                   </ul>
                 </div>
               )}
-              {runtimeIssues.remarks?.length > 0 && (
+              {(runtimeIssues.remarks?.length || 0) > 0 && (
                 <div className="text-sm text-gray-700 mt-2">
                   <div className="font-medium">Remarks</div>
                   <ul className="list-disc pl-5">
-                    {runtimeIssues.remarks.slice(0, 3).map((r, idx) => (
+                    {runtimeIssues.remarks?.slice(0, 3).map((r, idx) => (
                       <li key={idx} className="truncate" title={r}>{r}</li>
                     ))}
                   </ul>
