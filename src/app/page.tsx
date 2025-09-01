@@ -6,7 +6,6 @@ import OutputParameters from '@/components/OutputParameters'
 import ConfigPanel from '@/components/ConfigPanel'
 import AIPanel from '@/components/AIPanel'
 import ModelSelector from '@/components/ModelSelector'
-import TabNavigation from '@/components/TabNavigation'
 import ContextPanel from '@/components/ContextPanel'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
@@ -142,9 +141,6 @@ export default function Home() {
 
   return (
     <div className="space-y-4">
-      {/* Tab Navigation */}
-      <TabNavigation />
-      
       {/* Tab Content */}
       {activeTab === 'coding' ? (
         <>
@@ -187,11 +183,11 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   {hasIssues && (
                     <button
-                      className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-semibold hover:bg-red-700 shadow-sm"
+                      className={`px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-sm ${ (runtimeIssues?.errors?.length || 0) > 0 ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700'}`}
                       onClick={() => setShowErrorPanel((v) => !v)}
-                      title="Show component runtime errors"
+                      title={(runtimeIssues?.errors?.length || 0) > 0 ? 'Show component errors' : 'Show component warnings/remarks'}
                     >
-                      Error
+                      {(runtimeIssues?.errors?.length || 0) > 0 ? 'Error' : 'Issues'}
                     </button>
                   )}
                   <EditorStatusActions />
@@ -209,9 +205,9 @@ export default function Home() {
                 {/* Runtime error panel (expanded on demand) */}
                 {hasIssues && showErrorPanel && (
                   <div className="absolute right-6 top-6 z-10 w-[420px] max-w-full">
-                    <div className="rounded-xl shadow-2xl border border-red-300 bg-white overflow-hidden">
-                      <div className="px-4 py-2 bg-red-500 text-white flex items-center justify-between">
-                        <div className="font-semibold">Component Error</div>
+                    <div className="rounded-xl shadow-2xl border border-gray-300 bg-white overflow-hidden">
+                      <div className={`px-4 py-2 text-white flex items-center justify-between ${(runtimeIssues?.errors?.length || 0) > 0 ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                        <div className="font-semibold">{(runtimeIssues?.errors?.length || 0) > 0 ? 'Component Error' : 'Component Issues'}</div>
                         <button className="opacity-80 hover:opacity-100" onClick={() => setShowErrorPanel(false)} aria-label="Close">
                           <i className="fas fa-times"></i>
                         </button>

@@ -93,7 +93,7 @@ export default function ParameterCard({
     : `${parameter.kind === 'input' ? 'Input' : 'Output'}: ${parameter.name || 'unnamed'}`
 
   return (
-    <div className="param-card card mb-3 animate-fadeIn">
+    <div className={`param-card card mb-3 animate-fadeIn ${isInput ? 'border-l-4' : 'border-l-4'}`} style={{ borderLeftColor: isInput ? 'var(--inputs-accent)' : 'var(--outputs-accent)' }}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 flex-1">
@@ -104,9 +104,12 @@ export default function ParameterCard({
             >
               <i className={`fas fa-chevron-${isCollapsed ? 'right' : 'down'} text-xs`}></i>
             </button>
-            <h5 className="text-base font-semibold flex-1">
-              {cardTitle}
-            </h5>
+            <h5 className="text-base font-semibold flex-1">{cardTitle}</h5>
+            {parameter.kind === 'input' ? (
+              <span className="chip chip-info" title="Input parameter">Input</span>
+            ) : (
+              <span className="chip chip-purple" title="Output parameter">Output</span>
+            )}
           </div>
           {!disableRemove && !isDefaultOutput && (
             <button
@@ -197,12 +200,12 @@ export default function ParameterCard({
                   checked={(parameter as InputParameter).optional}
                   onChange={handleOptionalChange}
                 />
-                <label 
-                  className="text-xs cursor-pointer select-none" 
-                  htmlFor={`optional-${parameter.id}`}
-                >
+                <label className="text-xs cursor-pointer select-none" htmlFor={`optional-${parameter.id}`}>
                   Optional parameter
                 </label>
+                <span className={`ml-2 chip ${(parameter as InputParameter).optional ? 'chip-optional' : 'chip-required'}`}>
+                  {(parameter as InputParameter).optional ? 'Optional' : 'Required'}
+                </span>
               </div>
             </>
           )}

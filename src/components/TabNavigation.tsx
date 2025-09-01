@@ -7,15 +7,24 @@ export default function TabNavigation() {
   const setActiveTab = useAppStore(state => state.setActiveTab)
   
   return (
-    <div className="flex border-b border-gray-200 mb-4 bg-white rounded-t-lg">
+    <div className="flex border-b mb-4 rounded-t-lg" style={{ 
+      backgroundColor: 'var(--card-bg)',
+      borderColor: 'var(--border-color)',
+      boxShadow: 'var(--shadow-sm)'
+    }}>
       <button
         className={`
-          flex items-center px-4 py-2 text-sm font-medium transition-colors
+          flex items-center px-4 py-2.5 text-sm font-medium transition-all duration-200
           ${activeTab === 'coding' 
-            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            ? 'border-b-2' 
+            : 'hover:bg-opacity-5 hover:bg-gray-900'
           }
         `}
+        style={{
+          color: activeTab === 'coding' ? 'var(--primary-color)' : 'var(--text-muted)',
+          borderColor: activeTab === 'coding' ? 'var(--primary-color)' : 'transparent',
+          backgroundColor: activeTab === 'coding' ? 'rgba(99, 102, 241, 0.05)' : 'transparent'
+        }}
         onClick={() => setActiveTab('coding')}
       >
         <i className="fas fa-code mr-2"></i>
@@ -24,12 +33,17 @@ export default function TabNavigation() {
       
       <button
         className={`
-          flex items-center px-4 py-2 text-sm font-medium transition-colors
+          flex items-center px-4 py-2.5 text-sm font-medium transition-all duration-200
           ${activeTab === 'context' 
-            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            ? 'border-b-2' 
+            : 'hover:bg-opacity-5 hover:bg-gray-900'
           }
         `}
+        style={{
+          color: activeTab === 'context' ? 'var(--primary-color)' : 'var(--text-muted)',
+          borderColor: activeTab === 'context' ? 'var(--primary-color)' : 'transparent',
+          backgroundColor: activeTab === 'context' ? 'rgba(99, 102, 241, 0.05)' : 'transparent'
+        }}
         onClick={() => setActiveTab('context')}
       >
         <i className="fas fa-project-diagram mr-2"></i>

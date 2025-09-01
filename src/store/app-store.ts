@@ -46,6 +46,8 @@ export interface AppState {
   // Settings
   apiKey: string
   autoFetch: boolean
+  // Theme
+  theme: 'classic' | 'ocean' | 'grape' | 'dark'
 
   // AI
   aiPrompt: string
@@ -86,6 +88,7 @@ export interface AppState {
   setCode: (code: string) => void
   setTargetGuid: (guid: string) => void
   setApiKey: (key: string) => void
+  setTheme: (theme: 'classic' | 'ocean' | 'grape' | 'dark') => void
   setAiPrompt: (prompt: string) => void
   setAiGenerateParams: (on: boolean) => void
   setAiModel: (model: ModelId) => void
@@ -230,6 +233,7 @@ print("VibeCode Editor Ready")`,
   
   apiKey: getInitialApiKey(),
   autoFetch: getInitialAutoFetch(),
+  theme: 'classic',
   
   componentsById: {},
   selectedComponentId: null,
@@ -285,6 +289,12 @@ print("VibeCode Editor Ready")`,
     set({ apiKey: key })
     if (typeof window !== 'undefined') {
       localStorage.setItem('apiKey', key)
+    }
+  },
+  setTheme: (theme) => {
+    set({ theme })
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', theme)
     }
   },
   setAiPrompt: (prompt) => set({ aiPrompt: prompt }),

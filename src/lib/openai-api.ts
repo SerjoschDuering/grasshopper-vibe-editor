@@ -269,6 +269,11 @@ ${generateParams ? `
 }
 
 function buildResponseContract(generateParams: boolean, userPrompt: string): string {
+  const trimmed = (userPrompt || '').trim()
+  const wordCount = trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0
+  const includeFinal = (wordCount > 0 && wordCount <= 50) || trimmed.length <= 350
+  const finalBlock = includeFinal ? `\n<final_user_instructions>\n${userPrompt}\n</final_user_instructions>` : ''
+
   return `
 <response_format>
 Output ONLY a single, valid JSON object. No prose, no markdown, no code fences.
@@ -280,10 +285,7 @@ The JSON MUST have these fields:
   "code": "The complete Python 2.7 code"${generateParams ? ',\n  "param_definitions": [\n    {"type": "input", "name": "param_name", "description": "what it does", "typehint": "str/int/float/etc", "access": "item/list/tree", "optional": true/false},\n    {"type": "output", "name": "result", "description": "what it outputs"}\n  ]' : ''}
 }
 </response_format>
-
-<final_user_instructions>
-${userPrompt}
-</final_user_instructions>
+${finalBlock}
 `
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import AppHeader from '@/components/AppHeader'
 
 export const metadata: Metadata = {
   title: 'VibeCode Grasshopper Editor',
@@ -21,10 +22,7 @@ export default function RootLayout({
       </head>
       <body>
         <div className="main-container">
-          <div className="app-header">
-            <i className="fas fa-code-branch app-logo"></i>
-            <h1 className="mb-0 text-2xl font-semibold">VibeCode Grasshopper Editor</h1>
-          </div>
+          <AppHeader />
           {children}
         </div>
       </body>

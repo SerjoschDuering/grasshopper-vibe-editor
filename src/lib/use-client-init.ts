@@ -8,6 +8,7 @@ export function useClientInit() {
     const savedApiKey = localStorage.getItem('apiKey')
     const savedCollapsed = localStorage.getItem('collapsedCards')
     const savedAiModel = localStorage.getItem('aiModel')
+    const savedTheme = localStorage.getItem('theme')
     
     const store = useAppStore.getState()
     if (savedAutoFetch === 'true') {
@@ -36,6 +37,16 @@ export function useClientInit() {
       } catch (e) {
         console.error('Failed to parse collapsed cards:', e)
       }
+    }
+
+    if (savedTheme && ['classic', 'ocean', 'grape', 'dark'].includes(savedTheme)) {
+      useAppStore.setState({ theme: savedTheme as any })
+      try {
+        document.documentElement.classList.remove('theme-ocean', 'theme-grape', 'theme-dark')
+        if (savedTheme !== 'classic') {
+          document.documentElement.classList.add('theme-' + savedTheme)
+        }
+      } catch {}
     }
   }, [])
 }

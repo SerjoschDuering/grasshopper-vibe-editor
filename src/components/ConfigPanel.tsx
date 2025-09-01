@@ -11,6 +11,8 @@ export default function ConfigPanel() {
   const fetchFromGrasshopper = useAppStore(state => state.fetchFromGrasshopper)
   const loadTestData = useAppStore(state => state.loadTestData)
   const loading = useAppStore(state => state.loading)
+  const theme = useAppStore(state => state.theme)
+  const setTheme = useAppStore(state => state.setTheme)
   
   const [autoFetchIndicator, setAutoFetchIndicator] = useState(false)
 
@@ -70,6 +72,31 @@ export default function ConfigPanel() {
               }`}
             />
           </button>
+        </div>
+
+        {/* Theme Switcher */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="theme-select" className="text-xs font-medium text-gray-600">Theme</label>
+          <select
+            id="theme-select"
+            value={theme}
+            onChange={(e) => {
+              const value = e.target.value as any
+              setTheme(value)
+              try {
+                document.documentElement.classList.remove('theme-ocean', 'theme-grape', 'theme-dark')
+                if (value !== 'classic') {
+                  document.documentElement.classList.add('theme-' + value)
+                }
+              } catch {}
+            }}
+            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+          >
+            <option value="classic">Classic</option>
+            <option value="ocean">Ocean</option>
+            <option value="grape">Grape</option>
+            <option value="dark">Dark</option>
+          </select>
         </div>
       </div>
 
