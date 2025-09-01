@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCode Grasshopper Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .download-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            margin: 10px;
+        }
+        .screenshot {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="display-3 mb-4"><i class="fas fa-code"></i> VibeCode Grasshopper Editor</h1>
+                    <p class="lead mb-5">AI-powered desktop app for editing Grasshopper Python components with real-time sync</p>
+                    <div class="d-flex flex-wrap justify-content-center">
+                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/VibeCode%20Grasshopper%20Editor-0.1.0-arm64.dmg" 
+                           class="btn btn-light btn-lg download-btn">
+                            <i class="fab fa-apple"></i> Download for Apple Silicon
+                        </a>
+                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/VibeCode%20Grasshopper%20Editor-0.1.0.dmg" 
+                           class="btn btn-outline-light btn-lg download-btn">
+                            <i class="fab fa-apple"></i> Download for Intel Mac
+                        </a>
+                    </div>
+                    <p class="mt-3"><small>macOS 10.14+ • Free & Open Source</small></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-12">
+                    <h2 class="display-5">Why VibeCode?</h2>
+                    <p class="text-muted">Modern Python editing for Grasshopper developers</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <i class="fas fa-robot feature-icon"></i>
+                    <h4>AI-Powered</h4>
+                    <p>Generate IronPython code with AI assistance. Perfect for Rhino/Grasshopper scripting.</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <i class="fas fa-sync-alt feature-icon"></i>
+                    <h4>Real-time Sync</h4>
+                    <p>Changes sync instantly between the editor and your Grasshopper components.</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <i class="fas fa-desktop feature-icon"></i>
+                    <h4>Native Desktop</h4>
+                    <p>No browser restrictions. Direct connection to your local Grasshopper server.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="text-center mb-5">Quick Start Guide</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-download text-primary"></i> Step 1: Download & Install</h5>
+                                    <ol>
+                                        <li>Download the app for your Mac type</li>
+                                        <li>Install the .dmg like any Mac app</li>
+                                        <li>Download the <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/gh_client_snippet.gh">Grasshopper component</a></li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-play text-success"></i> Step 2: Connect & Code</h5>
+                                    <ol>
+                                        <li>Open the .gh file in Grasshopper</li>
+                                        <li>Set server toggle to "True"</li>
+                                        <li>Launch VibeCode app and start coding!</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Requirements Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h3 class="mb-4">System Requirements</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-laptop text-info"></i> Desktop App</h5>
+                            <ul class="list-unstyled">
+                                <li>macOS 10.14 or later</li>
+                                <li>Intel or Apple Silicon Mac</li>
+                                <li>~170MB disk space</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-cube text-warning"></i> Grasshopper</h5>
+                            <ul class="list-unstyled">
+                                <li>Rhino 7 or 8</li>
+                                <li>Grasshopper plugin</li>
+                                <li>Python scripting enabled</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-lg-12">
+                    <p class="mb-2">
+                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor" class="text-light">
+                            <i class="fab fa-github"></i> View on GitHub
+                        </a>
+                        |
+                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases" class="text-light">
+                            <i class="fas fa-download"></i> All Releases
+                        </a>
+                        |
+                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/issues" class="text-light">
+                            <i class="fas fa-bug"></i> Report Issues
+                        </a>
+                    </p>
+                    <p class="text-muted mb-0">Built with ❤️ for the Grasshopper community</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
