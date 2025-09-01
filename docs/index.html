@@ -55,33 +55,8 @@
                         </a>
                     </div>
                     <p class="mt-3">
-                        <small>Cross-Platform Desktop App • Free & Open Source</small><br>
-                        <small class="text-warning"><i class="fas fa-shield-alt"></i> Prebuilt apps show security warnings • <a href="#troubleshooting" class="text-light">Installation help ↓</a></small>
+                        <small>Cross-Platform Desktop App • Free & Open Source</small>
                     </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security Notice Section -->
-    <section class="py-4 bg-warning-subtle">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-10 mx-auto">
-                    <div class="alert alert-warning border-0 shadow-sm" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-shield-alt me-3 text-warning" style="font-size: 2rem;"></i>
-                            <div>
-                                <h5 class="alert-heading mb-2">📱 Security Notice</h5>
-                                <p class="mb-2">macOS and Windows will show security warnings because this app isn't code-signed (requires $99-400/year certificates).</p>
-                                <p class="mb-0">
-                                    <strong>Don't worry!</strong> This is normal for free open-source apps. 
-                                    <a href="#troubleshooting" class="alert-link">See installation help below ↓</a> or 
-                                    <a href="#developers" class="alert-link">run locally instead</a>.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -116,34 +91,39 @@
         </div>
     </section>
 
-    <!-- Quick Start Section -->
+    <!-- Getting Started Section -->
     <section class="py-5 bg-light">
         <div class="container">
             <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <h2 class="text-center mb-5">Quick Start Guide</h2>
+                <div class="col-lg-10 mx-auto">
+                    <h2 class="text-center mb-5">Getting Started</h2>
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm">
+                        <div class="col-md-8">
+                            <div class="card border-0 shadow-sm">
                                 <div class="card-body">
-                                    <h5><i class="fas fa-download text-primary"></i> Step 1: Download & Install</h5>
-                                    <ol>
-                                        <li>Download the app for your platform above</li>
-                                        <li>Install (you'll see security warnings - <a href="#troubleshooting">see help below</a>)</li>
-                                        <li>Download the <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/gh_client_snippet.gh">Grasshopper component</a></li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h5><i class="fas fa-play text-success"></i> Step 2: Connect & Code</h5>
-                                    <ol>
-                                        <li>Open the .gh file in Grasshopper</li>
-                                        <li>Set server toggle to "True"</li>
+                                    <h5 class="mb-3"><i class="fas fa-rocket text-primary me-2"></i>Quick Setup</h5>
+                                    <ol class="mb-0">
+                                        <li class="mb-2">Download the app for your platform above</li>
+                                        <li class="mb-2">Download the <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/releases/latest/download/gh_client_snippet.gh">Grasshopper component</a></li>
+                                        <li class="mb-2">Open the .gh file in Grasshopper and set server toggle to "True"</li>
                                         <li>Launch VibeCode app and start coding!</li>
                                     </ol>
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-shield-alt text-warning"></i> 
+                                            First-time install? You'll see security warnings - <a href="#help">get help below ↓</a>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-3">Requirements</h6>
+                                    <p class="mb-2"><strong>Desktop:</strong><br>macOS 10.14+ or Windows 10+</p>
+                                    <p class="mb-2"><strong>Grasshopper:</strong><br>Rhino 7/8 with Python enabled</p>
+                                    <p class="mb-0"><strong>Size:</strong><br>125-170MB disk space</p>
                                 </div>
                             </div>
                         </div>
@@ -153,110 +133,58 @@
         </div>
     </section>
 
-    <!-- Requirements Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 mx-auto text-center">
-                    <h3 class="mb-4">System Requirements</h3>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5><i class="fas fa-laptop text-info"></i> Desktop App</h5>
-                            <ul class="list-unstyled">
-                                <li>macOS 10.14+ or Windows 10+</li>
-                                <li>Intel/Apple Silicon/x64</li>
-                                <li>~125-170MB disk space</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5><i class="fas fa-cube text-warning"></i> Grasshopper</h5>
-                            <ul class="list-unstyled">
-                                <li>Rhino 7 or 8 (Windows/Mac)</li>
-                                <li>Grasshopper plugin</li>
-                                <li>Python scripting enabled</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Troubleshooting Section -->
-    <section id="troubleshooting" class="py-5 bg-light">
+    <!-- Help Section -->
+    <section id="help" class="py-5">
         <div class="container">
             <div class="row">
                 <div class="col-lg-10 mx-auto">
-                    <h2 class="text-center mb-5"><i class="fas fa-tools text-primary"></i> Installation Troubleshooting</h2>
+                    <h2 class="text-center mb-5">Need Help?</h2>
                     
                     <div class="row">
-                        <!-- macOS Troubleshooting -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-md-6 mb-4">
                             <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0"><i class="fab fa-apple"></i> macOS Security Warning</h5>
-                                </div>
                                 <div class="card-body">
-                                    <div class="alert alert-warning">
-                                        <strong>Error:</strong> "VibeCode Grasshopper Editor is damaged and can't be opened"
+                                    <h5 class="text-primary mb-3"><i class="fas fa-shield-alt me-2"></i>Security Warnings</h5>
+                                    <p class="mb-3">Getting "can't be opened" or "Windows protected your PC"? This is normal for unsigned apps.</p>
+                                    
+                                    <div class="mb-3">
+                                        <strong>macOS:</strong> System Settings → Privacy & Security → "Open Anyway"<br>
+                                        <strong>Windows:</strong> Click "More info" → "Run anyway"
                                     </div>
-                                    <h6>Solution:</h6>
-                                    <ol class="mb-3">
-                                        <li>Go to <strong>System Settings</strong> → <strong>Privacy & Security</strong></li>
-                                        <li>Scroll to the <strong>Security</strong> section</li>
-                                        <li>Look for the blocked app message</li>
-                                        <li>Click <strong>"Open Anyway"</strong></li>
-                                        <li>Click <strong>"Open"</strong> in the confirmation dialog</li>
-                                    </ol>
-                                    <p class="mb-2">
-                                        <a href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac" 
-                                           target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-external-link-alt"></i> Apple's Official Guide
-                                        </a>
-                                    </p>
+                                    
+                                    <a href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac" 
+                                       target="_blank" class="btn btn-sm btn-outline-primary me-2">Apple Guide</a>
+                                    <a href="https://support.microsoft.com/en-us/windows/how-to-help-protect-your-pc-with-windows-defender-smartscreen-1c9a1b71-4dea-4d23-9a86-8b16dd22e4b9" 
+                                       target="_blank" class="btn btn-sm btn-outline-info">Windows Guide</a>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Windows Troubleshooting -->
-                        <div class="col-lg-6 mb-4">
+                        
+                        <div class="col-md-6 mb-4">
                             <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-info text-white">
-                                    <h5 class="mb-0"><i class="fab fa-windows"></i> Windows SmartScreen</h5>
-                                </div>
                                 <div class="card-body">
-                                    <div class="alert alert-warning">
-                                        <strong>Warning:</strong> "Windows protected your PC"
+                                    <h5 class="text-success mb-3"><i class="fas fa-code me-2"></i>Skip the Hassle</h5>
+                                    <p class="mb-3">Prefer to avoid security warnings? Run from source code instead:</p>
+                                    
+                                    <div class="bg-dark text-light p-3 rounded mb-3">
+                                        <code class="small">
+                                            git clone [repo-url]<br>
+                                            npm install<br>
+                                            npm run electron:dev
+                                        </code>
                                     </div>
-                                    <h6>Solution:</h6>
-                                    <ol class="mb-3">
-                                        <li>Click <strong>"More info"</strong> in the SmartScreen dialog</li>
-                                        <li>Click <strong>"Run anyway"</strong></li>
-                                        <li>The installer will proceed normally</li>
-                                        <li>Some antivirus may also show warnings - these are false positives</li>
-                                    </ol>
-                                    <p class="mb-2">
-                                        <a href="https://support.microsoft.com/en-us/windows/how-to-help-protect-your-pc-with-windows-defender-smartscreen-1c9a1b71-4dea-4d23-9a86-8b16dd22e4b9" 
-                                           target="_blank" class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-external-link-alt"></i> Microsoft's Official Guide
-                                        </a>
-                                    </p>
+                                    
+                                    <a href="#developers" class="btn btn-success">See Full Instructions</a>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row mt-4">
-                        <div class="col-lg-12">
-                            <div class="alert alert-info">
-                                <h6><i class="fas fa-info-circle"></i> Why do these warnings appear?</h6>
-                                <p class="mb-0">
-                                    Code signing certificates cost $99-400/year per platform. As a free, open-source project, 
-                                    we don't purchase these certificates. The app is completely safe - it's just not "officially blessed" 
-                                    by Apple/Microsoft. This is standard for many popular open-source desktop applications.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            These warnings appear because code signing costs $99-400/year. The app is safe - just not "officially blessed" by Apple/Microsoft.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -264,51 +192,32 @@
     </section>
 
     <!-- Developers Section -->
-    <section id="developers" class="py-5">
+    <section id="developers" class="py-5 bg-light">
         <div class="container">
             <div class="row">
-                <div class="col-lg-10 mx-auto text-center">
-                    <h2 class="mb-4"><i class="fas fa-code-branch text-success"></i> Run Locally</h2>
-                    <p class="lead mb-4">Skip security warnings entirely • Always get the latest features</p>
+                <div class="col-lg-8 mx-auto text-center">
+                    <h2 class="mb-4"><i class="fas fa-code-branch text-success"></i> Run from Source</h2>
+                    <p class="text-muted mb-4">Skip security warnings • Always get latest features • Easy to customize</p>
                     
-                    <div class="row">
-                        <div class="col-lg-8 mx-auto">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body text-start">
-                                    <h5><i class="fab fa-git-alt"></i> Clone & Run</h5>
-                                    <div class="bg-dark text-light p-3 rounded mb-3">
-                                        <code>
-                                            git clone https://github.com/SerjoschDuering/grasshopper-vibe-editor.git<br>
-                                            cd grasshopper-vibe-editor<br>
-                                            npm install<br>
-                                            npm run electron:dev
-                                        </code>
-                                    </div>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor" 
-                                           class="btn btn-success" target="_blank">
-                                            <i class="fab fa-github"></i> View on GitHub
-                                        </a>
-                                        <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/archive/refs/heads/main.zip" 
-                                           class="btn btn-outline-success" target="_blank">
-                                            <i class="fas fa-download"></i> Download Source ZIP
-                                        </a>
-                                    </div>
-                                </div>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="bg-dark text-light p-4 rounded mb-4">
+                                <code>
+                                    git clone https://github.com/SerjoschDuering/grasshopper-vibe-editor.git<br>
+                                    cd grasshopper-vibe-editor<br>
+                                    npm install<br>
+                                    npm run electron:dev
+                                </code>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mt-4">
-                        <div class="col-lg-8 mx-auto">
-                            <div class="alert alert-success">
-                                <h6><i class="fas fa-check-circle"></i> Benefits of Running Locally:</h6>
-                                <ul class="mb-0 text-start">
-                                    <li>No security warnings or installation hassles</li>
-                                    <li>Always get the latest features and bug fixes</li>
-                                    <li>Easy to modify and customize the code</li>
-                                    <li>Contribute back to the project</li>
-                                </ul>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor" 
+                                   class="btn btn-success" target="_blank">
+                                    <i class="fab fa-github"></i> GitHub Repository
+                                </a>
+                                <a href="https://github.com/SerjoschDuering/grasshopper-vibe-editor/archive/refs/heads/main.zip" 
+                                   class="btn btn-outline-success" target="_blank">
+                                    <i class="fas fa-download"></i> Download ZIP
+                                </a>
                             </div>
                         </div>
                     </div>
