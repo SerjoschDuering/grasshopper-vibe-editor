@@ -8,12 +8,16 @@ import {
 
 const GH_BASE_URL = process.env.NEXT_PUBLIC_GH_BASE_URL ?? 'http://127.0.0.1:9998'
 const FETCH_TIMEOUT = 5000 // 5 seconds timeout
-const MAX_RETRIES = 2
+const MAX_RETRIES = 3 // Increased retries
 const RETRY_DELAY = 1000 // 1 second between retries
+const RECONNECT_DELAY = 5000 // 5 seconds before auto-reconnect attempt
+const MAX_RECONNECT_ATTEMPTS = 3
 
 let autoFetchInterval: NodeJS.Timeout | null = null
 let connectionFailures = 0
-const MAX_CONSECUTIVE_FAILURES = 5
+const MAX_CONSECUTIVE_FAILURES = 3 // Reduced to trigger recovery faster
+let isReconnecting = false
+let reconnectAttempts = 0
 
 interface GrasshopperResponse {
   status: 'success' | 'none_selected' | 'multiple_selected' | 'error'
@@ -63,14 +67,34 @@ async function fetchWithRetry(
     try {
       const response = await fetchWithTimeout(url, options)
       connectionFailures = 0 // Reset failure counter on success
+      reconnectAttempts = 0 // Reset reconnect attempts on success
+      isReconnecting = false
+      
+      // Update connection health in store
+      const store = (await import('@/store/app-store')).useAppStore.getState()
+      store.updateConnectionHealth({
+        status: 'connected',
+        lastSuccessfulFetch: Date.now(),
+        consecutiveFailures: 0
+      })
+      
       return response
     } catch (error) {
       if (i === retries) {
         connectionFailures++
+        
+        // Update connection health in store
+        const store = (await import('@/store/app-store')).useAppStore.getState()
+        store.updateConnectionHealth({
+          status: connectionFailures >= MAX_CONSECUTIVE_FAILURES ? 'disconnected' : 'connected',
+          consecutiveFailures: connectionFailures
+        })
+        
         throw error
       }
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+      // Exponential backoff for retries
+      const delay = RETRY_DELAY * Math.pow(1.5, i)
+      await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
   throw new Error('Max retries exceeded')
@@ -221,6 +245,8 @@ export function startAutoFetch(onTick: () => Promise<void>): void {
   
   // Reset connection failure counter when starting
   connectionFailures = 0
+  isReconnecting = false
+  reconnectAttempts = 0
 
   // Start new interval (2 seconds)
   autoFetchInterval = setInterval(async () => {
@@ -229,25 +255,85 @@ export function startAutoFetch(onTick: () => Promise<void>): void {
     } catch (error) {
       console.error('Auto-fetch error:', error)
       
-      // If we've had too many consecutive failures, stop auto-fetch
-      if (connectionFailures >= MAX_CONSECUTIVE_FAILURES) {
-        console.warn('Too many connection failures, stopping auto-fetch')
-        stopAutoFetch()
-        // Notify the user through the store
+      // If we've had too many consecutive failures, attempt reconnection
+      if (connectionFailures >= MAX_CONSECUTIVE_FAILURES && !isReconnecting) {
+        isReconnecting = true
+        console.warn('Connection issues detected, attempting to reconnect...')
+        
+        // Don't stop auto-fetch immediately, try to recover
         const store = (await import('@/store/app-store')).useAppStore.getState()
-        store.showStatus({
-          message: 'Connection lost. Auto-fetch stopped. Please check GH server.',
-          type: 'error',
-          duration: 5000
+        store.updateConnectionHealth({
+          status: 'reconnecting',
+          consecutiveFailures: connectionFailures,
+          message: 'Attempting to reconnect...'
         })
-        // Try to auto-recover after a short backoff
-        setTimeout(async () => {
-          if (!(await checkServerReachable())) return
-          if (!isAutoFetchRunning()) startAutoFetch(onTick)
-        }, 10000)
+        store.showStatus({
+          message: 'Connection unstable. Attempting to reconnect...',
+          type: 'warning',
+          duration: 3000
+        })
+        
+        // Attempt reconnection with exponential backoff
+        attemptReconnection(onTick)
       }
     }
   }, 2000)
+}
+
+// New function to handle reconnection attempts
+async function attemptReconnection(onTick: () => Promise<void>): Promise<void> {
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    console.error('Max reconnection attempts reached')
+    stopAutoFetch()
+    const store = (await import('@/store/app-store')).useAppStore.getState()
+    store.updateConnectionHealth({
+      status: 'disconnected',
+      message: 'Connection lost. Please check GH server.',
+      consecutiveFailures: connectionFailures
+    })
+    store.showStatus({
+      message: 'Connection lost. Please check GH server and refresh the page.',
+      type: 'error',
+      duration: 0 // Persistent message
+    })
+    return
+  }
+  
+  reconnectAttempts++
+  const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1)
+  
+  setTimeout(async () => {
+    console.log(`Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`)
+    
+    if (await checkServerReachable(1000)) {
+      // Server is back!
+      console.log('Server connection restored')
+      connectionFailures = 0
+      reconnectAttempts = 0
+      isReconnecting = false
+      
+      const store = (await import('@/store/app-store')).useAppStore.getState()
+      store.updateConnectionHealth({
+        status: 'connected',
+        lastSuccessfulFetch: Date.now(),
+        consecutiveFailures: 0,
+        message: undefined
+      })
+      store.showStatus({
+        message: 'Connection restored!',
+        type: 'success',
+        duration: 3000
+      })
+      
+      // Resume normal operation if auto-fetch was stopped
+      if (!isAutoFetchRunning()) {
+        startAutoFetch(onTick)
+      }
+    } else {
+      // Continue trying
+      attemptReconnection(onTick)
+    }
+  }, delay)
 }
 
 export function stopAutoFetch(): void {

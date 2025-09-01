@@ -3,6 +3,44 @@
 import { useAppStore } from '@/store/app-store'
 import { useState, useEffect } from 'react'
 
+// Simple connection status indicator
+function ConnectionStatusIndicator() {
+  const connectionHealth = useAppStore(state => state.connectionHealth)
+  
+  const getStatusColor = () => {
+    switch (connectionHealth.status) {
+      case 'connected':
+        return 'bg-green-500'
+      case 'reconnecting':
+        return 'bg-yellow-500 animate-pulse'
+      case 'disconnected':
+        return 'bg-red-500'
+      default:
+        return 'bg-gray-400'
+    }
+  }
+  
+  const getTooltip = () => {
+    switch (connectionHealth.status) {
+      case 'connected':
+        return 'Connected to GH server'
+      case 'reconnecting':
+        return `Reconnecting... (${connectionHealth.consecutiveFailures} failures)`
+      case 'disconnected':
+        return 'Disconnected from GH server'
+      default:
+        return 'Checking connection...'
+    }
+  }
+  
+  return (
+    <span 
+      className={`inline-block w-1.5 h-1.5 rounded-full transition-all ${getStatusColor()}`}
+      title={getTooltip()}
+    />
+  )
+}
+
 export default function ConfigPanel() {
   const targetGuid = useAppStore(state => state.targetGuid)
   const setTargetGuid = useAppStore(state => state.setTargetGuid)
@@ -55,9 +93,7 @@ export default function ConfigPanel() {
             Auto-fetch
           </label>
           {autoFetch && (
-            <span className={`inline-block w-1.5 h-1.5 rounded-full transition-all ${
-              autoFetchIndicator ? 'bg-green-500' : 'bg-green-300'
-            }`} />
+            <ConnectionStatusIndicator />
           )}
           <button
             id="auto-fetch"

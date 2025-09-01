@@ -30,6 +30,13 @@ interface LoadingFlags {
   autoFetch: boolean
 }
 
+interface ConnectionHealth {
+  status: 'connected' | 'reconnecting' | 'disconnected' | 'unknown'
+  lastSuccessfulFetch: number | null
+  consecutiveFailures: number
+  message?: string
+}
+
 export interface AppState {
   // Editor
   code: string
@@ -42,6 +49,9 @@ export interface AppState {
   // Component cache
   componentsById: ComponentsById
   selectedComponentId: ComponentId | null
+
+  // Connection health
+  connectionHealth: ConnectionHealth
 
   // Settings
   apiKey: string
@@ -105,6 +115,9 @@ export interface AppState {
 
   showStatus: (status: StatusMessage) => void
   clearStatus: () => void
+  
+  // Connection health
+  updateConnectionHealth: (health: Partial<ConnectionHealth>) => void
 
   // Async ops
   fetchFromGrasshopper: () => Promise<void>
@@ -237,6 +250,12 @@ print("VibeCode Editor Ready")`,
   
   componentsById: {},
   selectedComponentId: null,
+  
+  connectionHealth: {
+    status: 'unknown',
+    lastSuccessfulFetch: null,
+    consecutiveFailures: 0
+  },
   
   aiPrompt: '',
   aiGenerateParams: false,
@@ -1446,5 +1465,10 @@ output = process_points(points, scale)`
         estimatedTokens: Math.floor(totalComponents * tokensPerComponent)
       }
     })
-  }
+  },
+  
+  // Connection health actions
+  updateConnectionHealth: (health: Partial<ConnectionHealth>) => set((state) => ({
+    connectionHealth: { ...state.connectionHealth, ...health }
+  }))
 }))

@@ -744,8 +744,15 @@ def socket_server_thread():
     try:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Add more socket options for better stability
+        try:
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        except:
+            pass  # Ignore if not supported
         server_socket.bind((host, port))
         server_socket.listen(5)
+        # Set timeout BEFORE the loop to avoid changing socket state mid-operation
+        server_socket.settimeout(1.0)
         sc.sticky["server_status"] = "Server listening on port {}".format(port)
         sc.sticky.pop("server_thread_error", None)
 
@@ -753,8 +760,7 @@ def socket_server_thread():
             conn = None
             addr = None
             try:
-                # Use blocking accept initially, but with a timeout for the loop
-                server_socket.settimeout(1.0)
+                # Accept connection with timeout already set
                 conn, addr = server_socket.accept()
                 conn.settimeout(10.0) # Set timeout for operations on this connection
                 sc.sticky["last_connection_addr"] = str(addr)
@@ -833,24 +839,47 @@ def socket_server_thread():
                 conn.sendall(response)
 
             except socket.timeout:
-                 error_msg = "Socket timeout during connection handling with {}".format(addr if addr else 'unknown')
-                 sc.sticky["server_thread_error"] = error_msg
-                 # Try sending timeout response if possible
-                 try:
-                     timeout_response = "HTTP/1.1 408 Request Timeout\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                     if conn: conn.sendall(timeout_response)
-                 except: pass # Ignore errors sending timeout response
+                # Timeout is expected when no connections arrive - not an error
+                # Just continue the loop to check if server should still run
+                continue
+            except socket.error as sock_err:
+                # Handle specific socket errors
+                if sock_err.errno == 10022:  # Invalid argument error
+                    # Socket is in bad state, need to recreate it
+                    sc.sticky["server_thread_error"] = "Socket error 10022: Recreating socket..."
+                    try:
+                        if server_socket:
+                            server_socket.close()
+                        # Recreate socket
+                        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        server_socket.bind((host, port))
+                        server_socket.listen(5)
+                        server_socket.settimeout(1.0)
+                        sc.sticky["server_status"] = "Server recovered and listening on port {}".format(port)
+                        sc.sticky.pop("server_thread_error", None)
+                    except Exception as recreate_err:
+                        sc.sticky["server_thread_error"] = "Failed to recreate socket: {}".format(recreate_err)
+                        break  # Exit the loop if we can't recover
+                elif sock_err.errno == 10035:  # Would block error
+                    # This can happen with non-blocking operations, just continue
+                    continue
+                else:
+                    # Log other socket errors but try to continue
+                    sc.sticky["server_thread_error"] = "Socket error {}: {}".format(sock_err.errno, sock_err)
             except Exception as e:
+                # Non-socket exceptions
                 tb_str = traceback.format_exc()
                 error_msg = "Error handling connection from {}: {}\n{}".format(addr if addr else 'unknown', e, tb_str)
                 sc.sticky["server_thread_error"] = error_msg
-                # Try sending internal server error response
-                try:
-                    error_response_body = json.dumps({"status": "error", "result": "Internal server error during connection handling."})
-                    error_response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n{}".format(len(error_response_body), error_response_body)
-                    if conn: conn.sendall(error_response)
-                except Exception as send_err:
-                    sc.sticky["server_thread_error"] = str(sc.sticky.get("server_thread_error", "")) + "\nAdditionally failed to send error response: {}".format(send_err)
+                # Try sending internal server error response if we have a connection
+                if conn:
+                    try:
+                        error_response_body = json.dumps({"status": "error", "result": "Internal server error during connection handling."})
+                        error_response = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n{}".format(len(error_response_body), error_response_body)
+                        conn.sendall(error_response)
+                    except:
+                        pass  # Ignore errors sending error response
             finally:
                 if conn:
                     conn.close()
