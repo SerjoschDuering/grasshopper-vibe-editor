@@ -375,10 +375,24 @@ def update_script_component_on_ui_thread(instance_guid_str, code, description, p
                         if param_type == "input":
                             new_param = create_gh_input_param(p_def)
                             comp.Params.RegisterInputParam(new_param)
+                            # Ensure description is applied after registration as well
+                            try:
+                                desc = p_def.get("description")
+                                if desc is not None:
+                                    new_param.Description = str(desc)
+                            except:
+                                pass
                             new_input_params.append(new_param) # Store new input param obj
                         elif param_type == "output":
                             new_param = create_gh_output_param(p_def)
                             comp.Params.RegisterOutputParam(new_param)
+                            # Ensure description is applied after registration as well
+                            try:
+                                desc = p_def.get("description")
+                                if desc is not None:
+                                    new_param.Description = str(desc)
+                            except:
+                                pass
                             new_output_params.append(new_param) # Store new output param obj
 
                     # Ensure Default Output & Store Reference
@@ -386,6 +400,10 @@ def update_script_component_on_ui_thread(instance_guid_str, code, description, p
                     if "output" not in current_output_names and "__dummy_out__" not in current_output_names:
                          default_out = create_gh_output_param({"name": "output", "description": "Default output"})
                          comp.Params.RegisterOutputParam(default_out)
+                         try:
+                             default_out.Description = "Default output"
+                         except:
+                             pass
                          new_output_params.append(default_out) # Store new default output obj
 
                     # Remove Dummies
@@ -1024,6 +1042,23 @@ def process_command(command_data):
                  # Log error to sticky
                  sc.sticky["processing_error"] = "Missing 'instance_guid' for update_script."
                  return {"status": "error", "result": "Missing 'instance_guid'."}
+
+            # Stash last received payload for debugging
+            try:
+                sc.sticky["last_update_payload_summary"] = {
+                    "has_code": bool(code and len(str(code)) > 0),
+                    "description": description,
+                    "param_defs_count": len(param_definitions) if isinstance(param_definitions, list) else 0,
+                    "param_defs_preview": [
+                        {
+                            "type": p.get("type"),
+                            "name": p.get("name"),
+                            "has_description": bool(p.get("description")),
+                        } for p in (param_definitions or [])
+                    ][:5]
+                }
+            except:
+                pass
 
             # Execute the update on the UI thread
             action = Action(lambda: sc.sticky.update({"__temp_result": update_script_component_on_ui_thread(instance_guid, code, description, param_definitions)}))

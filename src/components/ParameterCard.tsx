@@ -88,9 +88,7 @@ export default function ParameterCard({
     }
   }
 
-  const cardTitle = isDefaultOutput 
-    ? "Default Output: 'output'" 
-    : `${parameter.kind === 'input' ? 'Input' : 'Output'}: ${parameter.name || 'unnamed'}`
+  const cardTitle = parameter.name || 'unnamed'
 
   return (
     <div className={`param-card card mb-3 animate-fadeIn ${isInput ? 'border-l-4' : 'border-l-4'}`} style={{ borderLeftColor: isInput ? 'var(--inputs-accent)' : 'var(--outputs-accent)' }}>

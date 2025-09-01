@@ -528,6 +528,10 @@ print("VibeCode Editor Ready")`,
         }
 
         const code = data.code || ''
+        // Mirror component description from GH into UI state
+        if (typeof data.description === 'string' && data.description.length > 0) {
+          set({ aiComponentDescription: data.description })
+        }
         const serverRevision = computeRevisionFromGhData(
           code,
           toGhParamDefsForRevisionFromUi(newInputs, newOutputs)
@@ -673,23 +677,31 @@ print("VibeCode Editor Ready")`,
     })
     
     try {
-      const paramDefinitions = mapStoreToParamDefinitions(state.inputs, state.outputs)
+      // Prefer selected component draft when available
+      const selectedId = state.selectedComponentId
+      const draft = selectedId ? state.componentsById[selectedId]?.draft : null
+      const codeToSend = draft ? draft.code : state.code
+      const inputsToSend = draft ? draft.inputs : state.inputs
+      const outputsToSend = draft ? draft.outputs : state.outputs
+
+      const paramDefinitions = mapStoreToParamDefinitions(inputsToSend, outputsToSend)
       
       const payload = {
         type: 'update_script' as const,
         instance_guid: state.targetGuid,
-        code: state.code,
+        code: codeToSend,
         description: state.aiComponentDescription || undefined,
         param_definitions: paramDefinitions
       }
+      try { console.debug('[GH] update payload', payload) } catch {}
       
       const response = await updateScript(payload)
       
       if ((response as any).status === 'success') {
         // Mark current draft as clean using the just-sent content
-        const inputs = state.inputs
-        const outputs = state.outputs
-        const code = state.code
+        const inputs = inputsToSend
+        const outputs = outputsToSend
+        const code = codeToSend
         const serverRevision = computeRevisionFromGhData(
           code,
           toGhParamDefsForRevisionFromUi(inputs, outputs)
@@ -798,8 +810,45 @@ print("VibeCode Editor Ready")`,
         selectedComponentId: state.selectedComponentId || undefined
       })
       
+      // Inject minimal footer to persist component description inside GHPython before updating editor code
+      let codeFromAI = result.code || ''
+      try {
+        const startMarker = '# --- VibeCode: auto-apply component description (begin)'
+        const endMarker = '# --- VibeCode: auto-apply component description (end)'
+        const desc = (result.description || '').trim()
+        const pyDesc = JSON.stringify(desc)
+
+        // 1) Replace any existing ghenv.Component.Description = "..." occurrences
+        //    Handles both single and double quoted strings conservatively
+        const descAssignRegex = /(ghenv\.Component\.Description\s*=\s*)(["'])(?:[^"'\\]|\\.|\n)*?\2/g
+        if (desc.length > 0 && descAssignRegex.test(codeFromAI)) {
+          codeFromAI = codeFromAI.replace(descAssignRegex, '$1' + pyDesc)
+        } else {
+          // 2) If a VibeCode marker block exists, update inside it
+          const startIdx = codeFromAI.indexOf(startMarker)
+          const endIdx = codeFromAI.indexOf(endMarker)
+          if (desc.length > 0 && startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+            const block = codeFromAI.slice(startIdx, endIdx)
+            const updatedBlock = block.replace(descAssignRegex, '$1' + pyDesc)
+            codeFromAI = codeFromAI.slice(0, startIdx) + updatedBlock + codeFromAI.slice(endIdx)
+          } else if (desc.length > 0) {
+            // 3) Otherwise append a fresh minimal block
+            const footer = [
+              '',
+              startMarker,
+              'try:',
+              '    ghenv.Component.Description = ' + pyDesc,
+              'except:',
+              '    pass',
+              endMarker,
+              ''
+            ].join('\n')
+            codeFromAI = (codeFromAI || '').replace(/\s+$/, '') + footer
+          }
+        }
+      } catch {}
       // Update code via the same path as user edits (respects draft selection)
-      get().setCode(result.code)
+      get().setCode(codeFromAI)
       // Save AI explanation and component description
       set({ aiExplanation: result.explanation, aiComponentDescription: result.description })
       // Save AI explanation and component description

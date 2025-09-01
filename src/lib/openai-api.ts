@@ -251,6 +251,7 @@ ${enhancedContexts}
 6. Assign results to output parameter variables
 7. Maintain tree structure when appropriate
 8. Use proper type coercion (rs.coerce functions)
+9. Provide a concise component description (1–2 sentences, ≤200 characters)
 </requirements>
 
 ${generateParams ? `
@@ -261,6 +262,7 @@ ${generateParams ? `
 4. Set appropriate access levels (item, list, tree)
 5. Mark parameters as optional when appropriate
 6. Always include at least one output parameter
+7. Each input and output MUST include a short, specific description (≤120 characters)
 </parameter_requirements>
 ` : ''}
 `
@@ -281,8 +283,8 @@ The JSON MUST have these fields:
 {
   "reasoning": "Brief explanation of your approach",
   "explanation": "<=50 words, with line breaks (use \n between short lines)",
-  "description": "1-2 sentence component description for documentation",
-  "code": "The complete Python 2.7 code"${generateParams ? ',\n  "param_definitions": [\n    {"type": "input", "name": "param_name", "description": "what it does", "typehint": "str/int/float/etc", "access": "item/list/tree", "optional": true/false},\n    {"type": "output", "name": "result", "description": "what it outputs"}\n  ]' : ''}
+  "description": "1-2 sentences (<=200 chars) describing the component",
+  "code": "The complete Python 2.7 code"${generateParams ? ',\n  "param_definitions": [\n    {"type": "input", "name": "param_name", "description": "<=120 chars, what it does", "typehint": "str/int/float/etc", "access": "item/list/tree", "optional": true/false},\n    {"type": "output", "name": "result", "description": "<=120 chars, what it outputs"}\n  ]' : ''}
 }
 </response_format>
 ${finalBlock}
@@ -519,6 +521,7 @@ export function validateGeneratedParameters(paramDefinitions: any[]): Validation
   const errors: string[] = []
   const names = new Set<string>()
   let hasOutput = false
+  const maxParamDescLen = 120
   
   if (!Array.isArray(paramDefinitions)) {
     return { isValid: false, errors: ['Parameters must be an array'] }
@@ -558,6 +561,13 @@ export function validateGeneratedParameters(paramDefinitions: any[]): Validation
       if (!validAccess.includes(param.access)) {
         errors.push(`Invalid access level for ${param.name}: "${param.access}"`)
       }
+    }
+
+    // Validate description presence and length for both input and output
+    if (!param.description || typeof param.description !== 'string' || param.description.trim().length === 0) {
+      errors.push(`Missing description for ${param.name}`)
+    } else if (param.description.length > maxParamDescLen) {
+      errors.push(`Description too long for ${param.name} (>${maxParamDescLen} chars)`) 
     }
   }
   
