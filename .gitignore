@@ -10,6 +10,7 @@ out/
 # Production builds
 /dist/
 /build/
+/dist-electron/
 
 # TypeScript
 *.tsbuildinfo
