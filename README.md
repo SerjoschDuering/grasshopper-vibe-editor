@@ -1,15 +1,27 @@
 
 # VibeCode Grasshopper Editor
 
-A simple web-app-like code editor for Grasshopper Python components that streamlines your workflow and enhances productivity with AI-assisted code generation.
+A modern web-based code editor for Grasshopper Python components that streamlines your workflow with AI-assisted code generation and intelligent context analysis.
 
 ![VibeCode Editor Overview](docs/overview_1.jpg)
 
 ## What is VibeCode?
 
-VibeCode is a .. vibe coded .. interface for editing GHPython components that eliminates the frustration of working with Grasshopper's limited code editor. It provides a real-time connection between a web-based code editor and your Grasshopper canvas, making "vibe coding" easier with a more seamless AI integration -> less copy&paste.
+VibeCode is a dual-mode interface for working with GHPython components that eliminates the frustration of Grasshopper's limited code editor. It provides real-time synchronization between a web-based editor and your Grasshopper canvas, making "vibe coding" more efficient with seamless AI integration and intelligent context understanding.
 
--> its promptet to generate ironpython / python 2.7 code <-
+**→ Generates IronPython / Python 2.7 compatible code ←**
+
+## Two Powerful Modes
+
+### 🔧 **Coding Mode** - AI-Assisted Script Development
+Real-time code editing with intelligent AI assistance that understands your Grasshopper definition context.
+
+![Coding Interface](docs/coding_ui.jpg)
+
+### 📋 **Context Mode** - LLM-Ready Documentation Export  
+Translates your entire Grasshopper definition into LLM-friendly formats (Markdown, JSON, XML) with selectable detail levels and component filtering. Perfect for copying into external LLM tools! The output is sorted by computation order for logical flow understanding. Note: Cluster content is not parsed or scanned.
+
+![Context Interface](docs/context_ui.jpg)
 
 ## Key Features
 
