@@ -388,22 +388,26 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
   const apiEndpoint = 'https://api.openai.com/v1/responses'
 
   try {
-    try {
-      console.groupCollapsed('[OpenAI] Request')
-      console.debug('Endpoint:', apiEndpoint)
-      console.debug('Model:', requestBody.model)
-      console.debug('Max output tokens:', requestBody.max_output_tokens)
-      console.debug('Reasoning effort:', (requestBody as any).reasoning?.effort)
-      console.debug('Text format:', (requestBody as any).text?.format)
-      console.debug('Input preview:', fullPrompt.slice(0, 300) + (fullPrompt.length > 300 ? '…' : ''))
-      console.groupEnd()
-    } catch {}
-    // Print full prompt for debugging (may be large)
-    try {
-      console.groupCollapsed('[OpenAI] Full prompt (raw)')
-      console.log(fullPrompt)
-      console.groupEnd()
-    } catch {}
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.groupCollapsed('[OpenAI] Request')
+        console.debug('Endpoint:', apiEndpoint)
+        console.debug('Model:', requestBody.model)
+        console.debug('Max output tokens:', requestBody.max_output_tokens)
+        console.debug('Reasoning effort:', (requestBody as any).reasoning?.effort)
+        console.debug('Text format:', (requestBody as any).text?.format)
+        console.debug('Input preview:', fullPrompt.slice(0, 300) + (fullPrompt.length > 300 ? '…' : ''))
+        console.groupEnd()
+      } catch {}
+    }
+    // Print full prompt for debugging (may be large)  
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.groupCollapsed('[OpenAI] Full prompt (raw)')
+        console.log(fullPrompt)
+        console.groupEnd()
+      } catch {}
+    }
     console.time('openai:responses')
     const response = await fetch(apiEndpoint, {
       method: 'POST',
@@ -421,19 +425,23 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
     }
 
     // Log headers and raw body for debugging
-    try {
-      console.groupCollapsed('[OpenAI] Response meta')
-      const headersObj: Record<string, string> = {}
-      response.headers.forEach((v, k) => { headersObj[k] = v })
-      console.debug('Status:', response.status)
-      console.debug('Headers:', headersObj)
-      const raw = await response.clone().text().catch(() => '(failed to read raw body)')
-      console.debug('Raw body:', raw)
-      console.groupEnd()
-    } catch {}
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        console.groupCollapsed('[OpenAI] Response meta')
+        const headersObj: Record<string, string> = {}
+        response.headers.forEach((v, k) => { headersObj[k] = v })
+        console.debug('Status:', response.status)
+        console.debug('Headers:', headersObj)
+        const raw = await response.clone().text().catch(() => '(failed to read raw body)')
+        console.debug('Raw body:', raw)
+        console.groupEnd()
+      } catch {}
+    }
 
     const data = await response.json()
-    try { console.debug('[OpenAI] Parsed body:', data) } catch {}
+    if (process.env.NODE_ENV !== 'production') {
+      try { console.debug('[OpenAI] Parsed body:', data) } catch {}
+    }
 
     // Extract content: support output_text, message content 'output_text' | 'text', and structured 'json'
     let outputText: string | undefined = typeof data.output_text === 'string' ? data.output_text : undefined
@@ -459,7 +467,9 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
 
     if (!contentObj && (!outputText || typeof outputText !== 'string')) {
       // Surface unexpected shape to aid debugging
-      try { console.debug('Unexpected OpenAI response shape', data) } catch {}
+      if (process.env.NODE_ENV !== 'production') {
+        try { console.debug('Unexpected OpenAI response shape', data) } catch {}
+      }
       throw new Error('Missing output text in OpenAI response')
     }
 

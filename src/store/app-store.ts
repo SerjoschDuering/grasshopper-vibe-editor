@@ -68,6 +68,7 @@ export interface AppState {
   aiPhase?: 'building_prompt' | 'requesting' | 'done' | 'error'
   aiStartedAt?: number
   aiElapsedMs?: number
+  aiLastGeneratedAt?: number
 
   // UI
   loading: LoadingFlags
@@ -753,6 +754,19 @@ print("VibeCode Editor Ready")`,
   generateWithAI: async () => {
     const state = get()
     
+    // Basic rate limiting - prevent rapid fire requests (3 second cooldown)
+    const MIN_INTERVAL_MS = 3000
+    const now = Date.now()
+    if (state.aiLastGeneratedAt && (now - state.aiLastGeneratedAt) < MIN_INTERVAL_MS) {
+      const remaining = Math.ceil((MIN_INTERVAL_MS - (now - state.aiLastGeneratedAt)) / 1000)
+      get().showStatus({
+        message: `Please wait ${remaining} seconds before generating again`,
+        type: 'warning',
+        duration: 3000
+      })
+      return
+    }
+    
     // Import the generateWithAI function from openai-api
     const { generateWithAI: callOpenAI, validateApiKey, validatePrompt } = await import('@/lib/openai-api')
     
@@ -781,7 +795,8 @@ print("VibeCode Editor Ready")`,
       loading: { ...state.loading, ai: true },
       aiPhase: 'building_prompt',
       aiStartedAt: startedAt,
-      aiElapsedMs: 0
+      aiElapsedMs: 0,
+      aiLastGeneratedAt: startedAt
     }))
     let tickId: any = setInterval(() => {
       const s = get()

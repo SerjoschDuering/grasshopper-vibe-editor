@@ -26,10 +26,25 @@ VibeCode is a .. vibe coded .. interface for editing GHPython components that el
 
 ## Getting Started
 
-1. **Open the Grasshopper file** with the server component (or paste the server code into a new GHPython component)
-2. **Ensure the server is running** (toggle should be set to "True")
-3. **Double-click** the `grasshopper_vibeCoder.html` file to open the web interface
-4. **Select a script component** in Grasshopper to edit it in the web interface
+### Option 1: Use the Hosted Version (Recommended)
+1. Go to [**VibeCode Editor**](https://your-vercel-app.vercel.app) (hosted on Vercel)
+2. **Download and install** the Grasshopper server component:
+   - Download `gh_client_snippet.gh` from this repository
+   - Open it in Grasshopper and ensure the server toggle is set to "True"
+3. **Set up a tunnel** to connect the web app to your local Grasshopper:
+   - Install [ngrok](https://ngrok.com/) or [localtunnel](https://localtunnel.me/)
+   - Run: `ngrok http 9998` (or `lt --port 9998`)
+   - Copy the public URL (e.g., `https://abc123.ngrok.app`)
+4. **Enter the tunnel URL** in the VibeCode configuration panel
+5. **Select a script component** in Grasshopper to start editing
+
+### Option 2: Run Locally
+1. **Clone this repository**: `git clone https://github.com/your-repo/grasshopper-vibe-editor.git`
+2. **Install dependencies**: `npm install`
+3. **Set up environment**: `cp .env.example .env.local` (and configure if needed)
+4. **Run the development server**: `npm run dev`
+5. **Open** [http://localhost:3000](http://localhost:3000) in your browser
+6. **Set up the Grasshopper server** (same as Option 1, steps 2-5)
 
 ## Using AI Code Generation
 
@@ -62,4 +77,41 @@ The Canvas Context feature provides AI with intelligent information about your G
 
 ## How It Works
 
-VibeCode establishes a local connection between your browser and Grasshopper using a custom server component. When you select a GHPython component in Grasshopper, the editor automatically fetches its code and parameters, allowing you to make changes in a modern editor interface before sending them back to Grasshopper with a single click.
+VibeCode establishes a connection between your browser and Grasshopper using a custom server component. When you select a GHPython component in Grasshopper, the editor automatically fetches its code and parameters, allowing you to make changes in a modern editor interface before sending them back to Grasshopper with a single click.
+
+## Deployment
+
+### Deploy to Vercel (Recommended)
+1. **Fork this repository** to your GitHub account
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Import your forked repository
+   - Deploy with default settings
+3. **Configure environment** (optional):
+   - Add environment variables in Vercel dashboard if needed
+   - The app works without additional configuration
+
+### Deploy to Other Platforms
+- **Netlify**: Works out of the box with Next.js
+- **Railway/Render**: Use Next.js build settings
+- **Self-hosted**: Run `npm run build` then `npm run start`
+
+## Security Notes
+
+- API keys are stored locally in your browser (localStorage)
+- The Grasshopper server only runs locally on your machine
+- Tunnel connections (ngrok/localtunnel) are temporary and user-controlled
+- No code or data is stored on remote servers (only in your browser session)
+
+## Troubleshooting
+
+### Common Issues
+1. **"Failed to connect"**: Check that the Grasshopper server component toggle is "True"
+2. **"No component selected"**: Select a single GHPython component in Grasshopper
+3. **Tunnel not working**: Restart ngrok/localtunnel and update the URL in VibeCode
+4. **AI not generating**: Verify your OpenAI API key starts with "sk-"
+
+### Development
+- **Type checking**: `npm run type-check`
+- **Linting**: `npm run lint`
+- **Build**: `npm run build`

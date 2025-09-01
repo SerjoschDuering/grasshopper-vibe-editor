@@ -12,6 +12,7 @@ const MAX_RETRIES = 3 // Increased retries
 const RETRY_DELAY = 1000 // 1 second between retries
 const RECONNECT_DELAY = 5000 // 5 seconds before auto-reconnect attempt
 const MAX_RECONNECT_ATTEMPTS = 3
+const POLL_INTERVAL = 2000 // ms - consistent fast polling for real-time sync
 
 let autoFetchInterval: NodeJS.Timeout | null = null
 let connectionFailures = 0
@@ -248,12 +249,17 @@ export function startAutoFetch(onTick: () => Promise<void>): void {
   isReconnecting = false
   reconnectAttempts = 0
 
-  // Start new interval (2 seconds)
-  autoFetchInterval = setInterval(async () => {
-    try {
-      await onTick()
-    } catch (error) {
+  // Start consistent fast polling for real-time sync
+  autoFetchInterval = setInterval(() => {
+    // Wrap the async call to properly handle unhandled promise rejections
+    onTick().then(() => {
+      // Reset failures on success
+      connectionFailures = 0
+    }).catch((error) => {
       console.error('Auto-fetch error:', error)
+      
+      // Track connection failures
+      connectionFailures++
       
       // If we've had too many consecutive failures, attempt reconnection
       if (connectionFailures >= MAX_CONSECUTIVE_FAILURES && !isReconnecting) {
@@ -261,23 +267,27 @@ export function startAutoFetch(onTick: () => Promise<void>): void {
         console.warn('Connection issues detected, attempting to reconnect...')
         
         // Don't stop auto-fetch immediately, try to recover
-        const store = (await import('@/store/app-store')).useAppStore.getState()
-        store.updateConnectionHealth({
-          status: 'reconnecting',
-          consecutiveFailures: connectionFailures,
-          message: 'Attempting to reconnect...'
+        import('@/store/app-store').then(({ useAppStore }) => {
+          const store = useAppStore.getState()
+          store.updateConnectionHealth({
+            status: 'reconnecting',
+            consecutiveFailures: connectionFailures,
+            message: 'Attempting to reconnect...'
+          })
+          store.showStatus({
+            message: 'Connection unstable. Attempting to reconnect...',
+            type: 'warning',
+            duration: 3000
+          })
+          
+          // Attempt reconnection with exponential backoff
+          attemptReconnection(onTick)
+        }).catch((importError) => {
+          console.error('Failed to load store for reconnection:', importError)
         })
-        store.showStatus({
-          message: 'Connection unstable. Attempting to reconnect...',
-          type: 'warning',
-          duration: 3000
-        })
-        
-        // Attempt reconnection with exponential backoff
-        attemptReconnection(onTick)
       }
-    }
-  }, 2000)
+    })
+  }, POLL_INTERVAL)
 }
 
 // New function to handle reconnection attempts
@@ -303,11 +313,15 @@ async function attemptReconnection(onTick: () => Promise<void>): Promise<void> {
   const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1)
   
   setTimeout(async () => {
-    console.log(`Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`)
+    }
     
     if (await checkServerReachable(1000)) {
       // Server is back!
-      console.log('Server connection restored')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Server connection restored')
+      }
       connectionFailures = 0
       reconnectAttempts = 0
       isReconnecting = false

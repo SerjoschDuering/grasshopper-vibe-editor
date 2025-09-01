@@ -7,6 +7,7 @@ import ConfigPanel from '@/components/ConfigPanel'
 import AIPanel from '@/components/AIPanel'
 import ModelSelector from '@/components/ModelSelector'
 import ContextPanel from '@/components/ContextPanel'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
 import { useState, useEffect } from 'react'
@@ -146,7 +147,9 @@ export default function Home() {
         <>
           {/* Top Configuration Row */}
           <div className="card p-3 mb-4" style={{ backgroundColor: '#f8f9fa' }}>
-            <ConfigPanel />
+            <ErrorBoundary>
+              <ConfigPanel />
+            </ErrorBoundary>
           </div>
 
           {/* Three-Column Layout */}
@@ -166,7 +169,9 @@ export default function Home() {
               </h3>
             </div>
             <div className="flex-1 p-4 overflow-hidden flex flex-col">
-              <InputParameters />
+              <ErrorBoundary>
+                <InputParameters />
+              </ErrorBoundary>
             </div>
           </div>
         </div>
@@ -196,11 +201,13 @@ export default function Home() {
             </div>
             <div className={`p-0 editor-aurora ${loading.ai ? 'generating' : aiPhase === 'done' ? 'success' : aiPhase === 'error' ? 'error' : ''}`}>
               <div className="editor-surface relative">
-                <CodeEditor
-                  value={code}
-                  onChange={setCode}
-                  height="50vh"
-                />
+                <ErrorBoundary>
+                  <CodeEditor
+                    value={code}
+                    onChange={setCode}
+                    height="50vh"
+                  />
+                </ErrorBoundary>
 
                 {/* Runtime error panel (expanded on demand) */}
                 {hasIssues && showErrorPanel && (
@@ -289,7 +296,9 @@ export default function Home() {
               </div>
             </div>
             <div className="p-4">
-              <AIPanel />
+              <ErrorBoundary>
+                <AIPanel />
+              </ErrorBoundary>
             </div>
           </div>
         </div>
@@ -309,7 +318,9 @@ export default function Home() {
               </h3>
             </div>
             <div className="flex-1 p-4 overflow-hidden flex flex-col">
-              <OutputParameters />
+              <ErrorBoundary>
+                <OutputParameters />
+              </ErrorBoundary>
             </div>
           </div>
         </div>
@@ -317,7 +328,9 @@ export default function Home() {
         </>
       ) : (
         /* Context Tab */
-        <ContextPanel />
+        <ErrorBoundary>
+          <ContextPanel />
+        </ErrorBoundary>
       )}
     </div>
   )
