@@ -14,6 +14,7 @@ interface AIGenerateOptions {
   model?: string
   contextData?: any // For canvas context
   selectedComponentId?: string
+  image?: string // Base64 data URI for reference image
 }
 
 // Model configuration
@@ -23,8 +24,8 @@ export const MODEL_CONFIG = {
     name: 'GPT-5 Nano',
     description: 'Fastest and most cost-effective',
     pricing: { input: 0.05, output: 0.40 }, // per 1M tokens
-    contextWindow: 128000,
-    maxOutput: 16000,
+    contextWindow: 400000,
+    maxOutput: 128000,
     capabilities: ['basic', 'fast'],
     reasoningEffort: 'minimal'
   },
@@ -33,8 +34,8 @@ export const MODEL_CONFIG = {
     name: 'GPT-5 Mini',
     description: 'Balanced performance and cost',
     pricing: { input: 0.25, output: 2.00 },
-    contextWindow: 128000,
-    maxOutput: 16000,
+    contextWindow: 400000,
+    maxOutput: 128000,
     capabilities: ['standard', 'balanced'],
     reasoningEffort: 'medium'
   },
@@ -43,14 +44,17 @@ export const MODEL_CONFIG = {
     name: 'GPT-5',
     description: 'Most capable model',
     pricing: { input: 1.25, output: 10.00 },
-    contextWindow: 256000,
-    maxOutput: 32000,
+    contextWindow: 400000,
+    maxOutput: 128000,
     capabilities: ['advanced', 'reasoning', 'long-context'],
     reasoningEffort: 'medium'
   }
 } as const
 
 export type ModelId = keyof typeof MODEL_CONFIG
+
+// Simple MCP cooldown - disable MCP for 5 minutes after failures
+let mcpDisabledUntil = 0
 
 // AI Context providers
 export interface AIContextProvider {
@@ -124,35 +128,6 @@ export function setContextProviderEnabled(id: string, enabled: boolean): void {
   }
 }
 
-// Helper: replace ScriptPreview fenced code block in markdown for a component by GUID
-function stripScriptPreview(markdown: string, componentGuid: string, placeholder: string): string {
-  // Find the section corresponding to the component GUID
-  const guidPos = markdown.indexOf(componentGuid)
-  if (guidPos === -1) return markdown
-
-  // Find ScriptPreview after the guid
-  const scriptPreviewHeader = '\n- **ScriptPreview**:'
-  const headerPos = markdown.indexOf(scriptPreviewHeader, guidPos)
-  if (headerPos === -1) return markdown
-
-  // Find the opening code fence after the header
-  const openFencePos = markdown.indexOf('```', headerPos)
-  if (openFencePos === -1) return markdown
-
-  // Find the end of the opening fence line
-  const openFenceLineEnd = markdown.indexOf('\n', openFencePos)
-  if (openFenceLineEnd === -1) return markdown
-
-  // Find the closing code fence
-  const closeFencePos = markdown.indexOf('```', openFenceLineEnd + 1)
-  if (closeFencePos === -1) {
-    // No closing fence found; insert placeholder after opening fence line
-    return markdown.slice(0, openFenceLineEnd + 1) + placeholder + '\n' + markdown.slice(openFenceLineEnd + 1)
-  }
-
-  // Replace the content between fences with the placeholder
-  return markdown.slice(0, openFenceLineEnd + 1) + placeholder + '\n' + markdown.slice(closeFencePos)
-}
 
 function buildSystemPrompt(generateParams: boolean, canvasContext?: string): string {
   const contexts = getEnabledContextProviders()
@@ -295,7 +270,7 @@ ${finalBlock}
 // Removed buildJsonSchema - we're using simple JSON mode instead of strict schemas
 
 export async function generateWithAI(options: AIGenerateOptions): Promise<AIResponse> {
-  const { prompt, apiKey, state, generateParams, model = 'gpt-5-mini', contextData, selectedComponentId } = options
+  const { prompt, apiKey, state, generateParams, model = 'gpt-5-mini', contextData, selectedComponentId, image } = options
   
   // Validate model
   const modelConfig = MODEL_CONFIG[model as ModelId] || MODEL_CONFIG['gpt-5-mini']
@@ -342,16 +317,11 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
       const slicedContext = sliceProcessedContextByComponents(processedContext, contextGuids)
       
       // Generate markdown
-      let markdown = generateMarkdownTemplate(slicedContext, detailLevel as any)
+      const markdown = generateMarkdownTemplate(slicedContext, detailLevel as any)
 
-      // Replace selected component's ScriptPreview code block with placeholder and add a clear banner
+      // Add a clear banner identifying the target component
       const selectedComp = slicedContext.components.find(c => c.instanceGuid === selectedComponentId)
       const selectedName = (selectedComp && (selectedComp.nickName || selectedComp.name || selectedComp.kind)) || 'Unknown'
-      markdown = stripScriptPreview(
-        markdown,
-        selectedComponentId,
-        `<YOUR_CODE_HERE: Working on this component. GUID=${selectedComponentId}, Name=${selectedName}>`
-      )
 
       const banner = [
         '# Target Component',
@@ -368,48 +338,49 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
   const fullPrompt = buildSystemPrompt(generateParams, canvasContext) 
     + '\n\n' + userMessage
     + '\n\n' + buildResponseContract(generateParams, prompt)
-  const requestBody = {
-    model: modelConfig.id,
-    input: fullPrompt,
-    reasoning: { effort: modelConfig.reasoningEffort || 'medium' },  // Use medium reasoning effort
-    text: {
-      format: { type: 'json_object' as const }
-    },
-    tools: [
-      {
-        type: 'mcp',
-        server_label: 'context7',
-        server_url: 'https://mcp.context7.com/mcp',
-        allowed_tools: ['resolve-library-id', 'get-library-docs']
-      }
-    ],
-    tool_choice: 'auto',
-    max_output_tokens: Math.min(16000, modelConfig.maxOutput)
-  }
+  
   const apiEndpoint = 'https://api.openai.com/v1/responses'
-
-  try {
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        console.groupCollapsed('[OpenAI] Request')
-        console.debug('Endpoint:', apiEndpoint)
-        console.debug('Model:', requestBody.model)
-        console.debug('Max output tokens:', requestBody.max_output_tokens)
-        console.debug('Reasoning effort:', (requestBody as any).reasoning?.effort)
-        console.debug('Text format:', (requestBody as any).text?.format)
-        console.debug('Input preview:', fullPrompt.slice(0, 300) + (fullPrompt.length > 300 ? '…' : ''))
-        console.groupEnd()
-      } catch {}
+  
+  // Helper function to make API request
+  const makeRequest = async (includeMCP: boolean) => {
+    const requestBody: any = {
+      model: modelConfig.id,
+      input: [
+        {
+          role: 'user',
+          content: image
+            ? [
+                { type: 'input_text', text: fullPrompt },
+                { type: 'input_image', image_url: image }
+              ]
+            : [
+                { type: 'input_text', text: fullPrompt }
+              ]
+        }
+      ],
+      reasoning: { effort: modelConfig.reasoningEffort || 'medium' },
+      text: { format: { type: 'json_object' as const } },
+      max_output_tokens: Math.min(128000, modelConfig.maxOutput)
     }
-    // Print full prompt for debugging (may be large)  
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        console.groupCollapsed('[OpenAI] Full prompt (raw)')
-        console.log(fullPrompt)
-        console.groupEnd()
-      } catch {}
+    
+    // Add MCP tools if requested
+    if (includeMCP) {
+      requestBody.tools = [
+        {
+          type: 'mcp',
+          server_label: 'context7',
+          server_url: 'https://mcp.context7.com/mcp',
+          allowed_tools: ['resolve-library-id', 'get-library-docs'],
+          require_approval: 'never'
+        }
+      ]
+      requestBody.tool_choice = 'auto'
     }
-    console.time('openai:responses')
+    
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug(`[OpenAI] Making request ${includeMCP ? 'with' : 'without'} MCP tools`)
+    }
+    
     const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
@@ -418,85 +389,183 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
       },
       body: JSON.stringify(requestBody)
     })
-    console.timeEnd('openai:responses')
-
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.error?.message || `API request failed: ${response.status}`)
     }
+    
+    return response.json()
+  }
 
-    // Log headers and raw body for debugging
-    if (process.env.NODE_ENV !== 'production') {
+  // Check if MCP is in cooldown
+  const now = Date.now()
+  const mcpAvailable = now > mcpDisabledUntil
+  
+  try {
+    // First try: with MCP tools (if not in cooldown)
+    if (mcpAvailable) {
       try {
-        console.groupCollapsed('[OpenAI] Response meta')
-        const headersObj: Record<string, string> = {}
-        response.headers.forEach((v, k) => { headersObj[k] = v })
-        console.debug('Status:', response.status)
-        console.debug('Headers:', headersObj)
-        const raw = await response.clone().text().catch(() => '(failed to read raw body)')
-        console.debug('Raw body:', raw)
-        console.groupEnd()
-      } catch {}
-    }
-
-    const data = await response.json()
-    if (process.env.NODE_ENV !== 'production') {
-      try { console.debug('[OpenAI] Parsed body:', data) } catch {}
-    }
-
-    // Extract content: support output_text, message content 'output_text' | 'text', and structured 'json'
-    let outputText: string | undefined = typeof data.output_text === 'string' ? data.output_text : undefined
-    let contentObj: any | undefined
-    if (!outputText && Array.isArray(data.output)) {
-      // Walk output items and their content blocks
-      outer: for (const item of data.output) {
-        if (item && Array.isArray(item.content)) {
-          for (const c of item.content) {
-            if (!c) continue
-            if (c.type === 'json' && c.json && typeof c.json === 'object') {
-              contentObj = c.json
-              break outer
-            }
-            if ((c.type === 'output_text' || c.type === 'text') && typeof c.text === 'string') {
-              outputText = c.text
-              break outer
+        const data = await makeRequest(true)
+      
+      // Extract and parse response (same logic as before)
+      let outputText: string | undefined = typeof data.output_text === 'string' ? data.output_text : undefined
+      let contentObj: any | undefined
+      
+      if (!outputText && Array.isArray(data.output)) {
+        outer: for (const item of data.output) {
+          if (item && Array.isArray(item.content)) {
+            for (const c of item.content) {
+              if (!c) continue
+              if (c.type === 'json' && c.json && typeof c.json === 'object') {
+                contentObj = c.json
+                break outer
+              }
+              if (c.type === 'output_text' && typeof c.text === 'string') {
+                outputText = c.text
+                break outer
+              }
             }
           }
         }
       }
-    }
-
-    if (!contentObj && (!outputText || typeof outputText !== 'string')) {
-      // Surface unexpected shape to aid debugging
+      
+      const content = contentObj ?? JSON.parse(outputText as string)
+      
+      // Validate parameters if needed
+      if (generateParams && content.param_definitions) {
+        const validation = validateGeneratedParameters(content.param_definitions)
+        if (!validation.isValid) {
+          console.warn('Parameter validation failed:', validation.errors)
+        }
+      }
+      
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[OpenAI] Request with MCP tools succeeded')
+        }
+        
+        return {
+          reasoning: content.reasoning,
+          explanation: content.explanation,
+          code: content.code,
+          description: content.description || content.reasoning,
+          param_definitions: content.param_definitions
+        }
+        
+      } catch (mcpError) {
+        // Check if error is dependency-related (expand to catch all dependency failures)
+        const errorMessage = mcpError instanceof Error ? mcpError.message : String(mcpError)
+        const isDependencyError = errorMessage.includes('Failed Dependency') || 
+                                 errorMessage.includes('424') ||
+                                 errorMessage.includes('MCP server') || 
+                                 errorMessage.includes('context7') ||
+                                 errorMessage.includes('dependency') ||
+                                 errorMessage.includes('unavailable') ||
+                                 errorMessage.includes('timeout')
+        
+        if (!isDependencyError) {
+          // Not a dependency error, just rethrow
+          throw mcpError
+        }
+        
+        // Set 5-minute cooldown
+        mcpDisabledUntil = Date.now() + (5 * 60 * 1000)
+        const cooldownMinutes = 5
+        console.warn(`[OpenAI] Dependency failure detected, disabling MCP for ${cooldownMinutes} minutes:`, errorMessage)
+        
+        // Fallback: try without MCP tools
+        const data = await makeRequest(false)
+      
+      // Same response parsing logic
+      let outputText: string | undefined = typeof data.output_text === 'string' ? data.output_text : undefined
+      let contentObj: any | undefined
+      
+      if (!outputText && Array.isArray(data.output)) {
+        outer: for (const item of data.output) {
+          if (item && Array.isArray(item.content)) {
+            for (const c of item.content) {
+              if (!c) continue
+              if (c.type === 'json' && c.json && typeof c.json === 'object') {
+                contentObj = c.json
+                break outer
+              }
+              if (c.type === 'output_text' && typeof c.text === 'string') {
+                outputText = c.text
+                break outer
+              }
+            }
+          }
+        }
+      }
+      
+      const content = contentObj ?? JSON.parse(outputText as string)
+      
+      if (generateParams && content.param_definitions) {
+        const validation = validateGeneratedParameters(content.param_definitions)
+        if (!validation.isValid) {
+          console.warn('Parameter validation failed:', validation.errors)
+        }
+      }
+      
+        console.log('[OpenAI] Fallback request without MCP tools succeeded')
+        
+        return {
+          reasoning: content.reasoning,
+          explanation: content.explanation,
+          code: content.code,
+          description: content.description || content.reasoning,
+          param_definitions: content.param_definitions
+        }
+      }
+    } else {
+      // MCP is in cooldown, skip directly to non-MCP request
+      const remainingMinutes = Math.ceil((mcpDisabledUntil - now) / (60 * 1000))
       if (process.env.NODE_ENV !== 'production') {
-        try { console.debug('Unexpected OpenAI response shape', data) } catch {}
+        console.log(`[OpenAI] MCP in cooldown for ${remainingMinutes} more minutes, using fallback`)
       }
-      throw new Error('Missing output text in OpenAI response')
-    }
-
-    const content = contentObj ?? JSON.parse(outputText as string)
-    
-    // Validate output if parameters were generated
-    if (generateParams && content.param_definitions) {
-      const validation = validateGeneratedParameters(content.param_definitions)
-      if (!validation.isValid) {
-        // TODO: Implement retry with gpt-5-nano for parameter regeneration
-        // This would involve:
-        // 1. Call gpt-5-nano with specific instructions to fix the parameters
-        // 2. Include the validation errors in the prompt
-        // 3. Retry once with the corrected parameters
-        console.warn('Parameter validation failed:', validation.errors)
-        // For now, we'll still return the result but log the issues
+      
+      const data = await makeRequest(false)
+      
+      // Parse response
+      let outputText: string | undefined = typeof data.output_text === 'string' ? data.output_text : undefined
+      let contentObj: any | undefined
+      
+      if (!outputText && Array.isArray(data.output)) {
+        outer: for (const item of data.output) {
+          if (item && Array.isArray(item.content)) {
+            for (const c of item.content) {
+              if (!c) continue
+              if (c.type === 'json' && c.json && typeof c.json === 'object') {
+                contentObj = c.json
+                break outer
+              }
+              if (c.type === 'output_text' && typeof c.text === 'string') {
+                outputText = c.text
+                break outer
+              }
+            }
+          }
+        }
+      }
+      
+      const content = contentObj ?? JSON.parse(outputText as string)
+      
+      if (generateParams && content.param_definitions) {
+        const validation = validateGeneratedParameters(content.param_definitions)
+        if (!validation.isValid) {
+          console.warn('Parameter validation failed:', validation.errors)
+        }
+      }
+      
+      return {
+        reasoning: content.reasoning,
+        explanation: content.explanation,
+        code: content.code,
+        description: content.description || content.reasoning,
+        param_definitions: content.param_definitions
       }
     }
     
-    return {
-      reasoning: content.reasoning,
-      explanation: content.explanation,
-      code: content.code,
-      description: content.description || content.reasoning,
-      param_definitions: content.param_definitions
-    }
   } catch (error) {
     console.error('OpenAI API error:', error)
     throw error
@@ -591,4 +660,23 @@ export function validateGeneratedParameters(paramDefinitions: any[]): Validation
     isValid: errors.length === 0,
     errors
   }
+}
+
+// Utility to check MCP status and cooldown
+export function getMCPStatus(): { enabled: boolean; cooldownRemaining?: number } {
+  const now = Date.now()
+  const enabled = now > mcpDisabledUntil
+  
+  if (!enabled) {
+    const remainingMs = mcpDisabledUntil - now
+    const remainingMinutes = Math.ceil(remainingMs / (60 * 1000))
+    return { enabled: false, cooldownRemaining: remainingMinutes }
+  }
+  
+  return { enabled: true }
+}
+
+// Legacy function for compatibility
+export function getMCPEnabled(): boolean {
+  return getMCPStatus().enabled
 }

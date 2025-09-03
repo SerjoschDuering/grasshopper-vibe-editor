@@ -61,6 +61,27 @@ export default function ContextViewer({ processedContext, filteredComponents, se
       showStatus({ message: 'Failed to copy context', type: 'error', duration: 3000 })
     })
   }
+
+  const downloadFile = () => {
+    const fileExtensions = { markdown: 'md', json: 'json', xml: 'xml' }
+    const mimeTypes = { 
+      markdown: 'text/markdown', 
+      json: 'application/json', 
+      xml: 'application/xml' 
+    }
+    
+    const blob = new Blob([content], { type: mimeTypes[format] })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `grasshopper-context.${fileExtensions[format]}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    showStatus({ message: `File downloaded as ${fileExtensions[format].toUpperCase()}!`, type: 'success', duration: 2000 })
+  }
   
   return (
     <div className="card">
@@ -96,6 +117,14 @@ export default function ContextViewer({ processedContext, filteredComponents, se
             >
               <i className="fas fa-copy mr-1"></i>
               Copy
+            </button>
+            <button
+              onClick={downloadFile}
+              className="btn btn-sm"
+              disabled={!processedContext}
+            >
+              <i className="fas fa-download mr-1"></i>
+              Download
             </button>
             <button
               onClick={handlePromptTemplate}

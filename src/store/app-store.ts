@@ -63,6 +63,7 @@ export interface AppState {
   aiPrompt: string
   aiGenerateParams: boolean
   aiModel: ModelId
+  aiImage: string | null
   aiExplanation?: string
   aiComponentDescription?: string
   aiPhase?: 'building_prompt' | 'requesting' | 'done' | 'error'
@@ -103,6 +104,7 @@ export interface AppState {
   setAiPrompt: (prompt: string) => void
   setAiGenerateParams: (on: boolean) => void
   setAiModel: (model: ModelId) => void
+  setAiImage: (image: string | null) => void
 
   addInput: () => void
   addOutput: () => void
@@ -261,6 +263,7 @@ print("VibeCode Editor Ready")`,
   aiPrompt: '',
   aiGenerateParams: false,
   aiModel: getInitialAiModel(),
+  aiImage: null,
   
   loading: {
     ai: false,
@@ -325,6 +328,7 @@ print("VibeCode Editor Ready")`,
       localStorage.setItem('aiModel', model)
     }
   },
+  setAiImage: (image) => set({ aiImage: image }),
 
   addInput: () => {
     const newInput: InputParameter = {
@@ -822,7 +826,8 @@ print("VibeCode Editor Ready")`,
         generateParams: state.aiGenerateParams,
         model: state.aiModel,
         contextData: state.contextData,
-        selectedComponentId: state.selectedComponentId || undefined
+        selectedComponentId: state.selectedComponentId || undefined,
+        image: state.aiImage || undefined
       })
       
       // Inject minimal footer to persist component description inside GHPython before updating editor code
@@ -925,7 +930,7 @@ print("VibeCode Editor Ready")`,
         }
       }
       
-      set({ aiPhase: 'done' })
+      set({ aiPhase: 'done', aiImage: null })
       get().showStatus({ 
         message: 'AI generation complete', 
         type: 'success',
