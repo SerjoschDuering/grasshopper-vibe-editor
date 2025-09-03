@@ -31,6 +31,7 @@ Translates your entire Grasshopper definition into LLM-friendly formats (Markdow
 - **Add, modify, or remove** input and output parameters visually
 - **Auto-fetch** selected components from your Grasshopper canvas
 - **Canvas Context System** provides AI with information about connected components
+- **Image support** for visual context in AI chat interactions
 - **Syntax highlighting** and modern code editing features
 - **Instant deployment** of changes back to Grasshopper
 
