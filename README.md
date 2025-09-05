@@ -18,24 +18,42 @@ Real-time code editing with intelligent AI assistance that understands your Gras
 
 ![Coding Interface](docs/coding_ui.jpg)
 
+
+
+
+#### AI Context Control (Code Mode)
+Fine-tune what the LLM sees while working on the currently selected component.
+- Adjustable Up/Down traversal (1–3 levels) from the selected component
+- Manual selection mode to include a specific set/group of components
+- Dual preview: switch between a lightweight Canvas graph and a Markdown summary
+- potentially interesting for workflows like “consolidate these components into a single Python script”
+- 
+![Context engineering and Chat history](docs/context-history.jpg)
+
+#### Chat History (per component)
+Each component has its own chat thread with Undo/Redo across prompt iterations, so you can explore ideas and roll back safely without losing context.
+
+#### Coding Mode highlights
+- Real-time synchronization between the editor and Grasshopper
+- AI-powered code generation (GPT-5 nano/mini/full)
+- Context-aware AI that understands canvas connections
+- Edit input/output parameters visually; auto-generate with AI when desired
+- AI Context Control: manual selection, adjustable traversal (1–3), Canvas/Markdown preview, token estimate
+- Chat history per component with undo/redo
+- Image support for visual context in AI chat
+- Syntax highlighting and modern editor UX
+- One-click send back to Grasshopper
+
 ### 📋 **Context Mode** - LLM-Ready Documentation Export  
 Translates your entire Grasshopper definition into LLM-friendly formats (Markdown, JSON, XML) with selectable detail levels and component filtering. Perfect for copying into external LLM tools! The output is sorted by computation order for logical flow understanding. Note: Cluster content is not parsed or scanned.
 
 ![Context Interface](docs/context_ui.jpg)
 
-## Key Features
-
-- **Real-time synchronization** between the web editor and Grasshopper
-- **AI-powered code generation** with GPT-5 models (nano, mini, full)
-- **Context-aware AI** that understands your canvas connections and component relationships
-- **Add, modify, or remove** input and output parameters visually
-- **Auto-fetch** selected components from your Grasshopper canvas
-- **Canvas Context System** provides AI with information about connected components
-- **Image support** for visual context in AI chat interactions
-- **Syntax highlighting** and modern code editing features
-- **Instant deployment** of changes back to Grasshopper
-
-![Detailed Interface](docs/overview_1.jpg)
+#### Context Mode highlights
+- Export the whole definition to Markdown, JSON, or XML
+- Choose detail levels and filter components
+- Output ordered by computation flow for readability
+- Optimized for copy/paste into external LLM tools
 
 ## Getting Started
 
@@ -68,17 +86,10 @@ Translates your entire Grasshopper definition into LLM-friendly formats (Markdow
 3. Type a prompt describing what you want to create
 4. Toggle "Generate/Update Input/Output Parameters" if you want the AI to handle parameter creation
 5. Enable "Canvas State" context provider for AI to understand connected components
-6. Click "Generate Code with AI"
-7. Review and send changes back to Grasshopper with "Send to GH"
+6. Optional: Open **AI Context Control** (in Code Mode) to curate context for the current component — set traversal levels, manually select a group, and preview via Canvas or Markdown with token estimate
+7. Click "Generate Code with AI"
+8. Review and send changes back to Grasshopper with "Send to GH"
 
-### Context System
-
-The Canvas Context feature provides AI with intelligent information about your Grasshopper definition:
-- **Automatic Detection**: Identifies components connected to your selected component (±1 level)
-- **Medium Detail**: Component names, types, parameters, and connections
-- **Full Detail (GPT-5)**: Includes script contents from connected components
-- **Smart Filtering**: Only relevant components are included to optimize token usage
-- This context helps AI generate code that properly integrates with your existing data flow
 
 ## Requirements
 

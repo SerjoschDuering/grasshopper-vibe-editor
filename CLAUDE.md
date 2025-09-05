@@ -25,6 +25,7 @@ VibeCode Grasshopper Editor is a desktop app (Electron + Next.js) for editing Gr
 │  │  └─ page.tsx            Main application page
 │  ├─ components/
 │  │  ├─ AIPanel.tsx         AI prompt/completion controls
+│  │  ├─ AIContextOverlay.tsx AI Context Control overlay (graph, traversal, manual selection)
 │  │  ├─ AppHeader.tsx       Top navigation/header
 │  │  ├─ CodeEditor.tsx      Code editor for GHPython scripts
 │  │  ├─ ConfigPanel.tsx     Settings & configuration UI
@@ -32,6 +33,7 @@ VibeCode Grasshopper Editor is a desktop app (Electron + Next.js) for editing Gr
 │  │  ├─ ContextPanel.tsx    Canvas context data viewer
 │  │  ├─ ContextViewer.tsx   Rendered context display
 │  │  ├─ DocsPanel.tsx       Inline docs/help panel
+│  │  ├─ ChatHistory.tsx      Per-component chat history with undo/redo
 │  │  ├─ ErrorBoundary.tsx   UI error containment
 │  │  ├─ GraphicalView.tsx   Visual preview / future graph UI
 │  │  ├─ InputParameters.tsx Input parameter editor
@@ -44,6 +46,7 @@ VibeCode Grasshopper Editor is a desktop app (Electron + Next.js) for editing Gr
 │  │  ├─ grasshopper-api.ts  Client for GH server HTTP endpoints
 │  │  ├─ openai-api.ts       OpenAI API integration
 │  │  ├─ context-*.ts        Context extraction/exporters (Markdown/JSON)
+│  │  ├─ context-utils.ts    Context helpers and formatting
 │  │  ├─ graph-traversal.ts  Compute-order traversal helpers
 │  │  ├─ image-utils.ts      Image handling for AI context
 │  │  ├─ features.ts         Feature flags/toggles
@@ -74,6 +77,19 @@ VibeCode Grasshopper Editor is a desktop app (Electron + Next.js) for editing Gr
 - Package desktop app: `npm run dist`
 
 For end-to-end usage, see `README.md` (Getting Started, Troubleshooting).
+
+## New UX Capabilities (v0.1.0)
+
+- Per-component Chat History with Undo/Redo
+  - Each selected Grasshopper component maintains its own chat thread.
+  - You can step backward/forward through prompt iterations while preserving model responses.
+  - Primary files: `src/components/ChatHistory.tsx`, `src/store/ai-implementation.ts` (history state and actions).
+
+- AI Context Control Overlay
+  - Lets users curate how much of the graph the LLM receives.
+  - Adjustable Up/Down traversal levels (1–3), manual component selection, and a lightweight visual graph with Bézier edges.
+  - Includes token estimation to keep prompts efficient.
+  - Primary files: `src/components/AIContextOverlay.tsx`, `src/lib/context-*.ts`, `src/lib/graph-traversal.ts`.
 
 ## Rules for AI-Generated GHPython Code
 
