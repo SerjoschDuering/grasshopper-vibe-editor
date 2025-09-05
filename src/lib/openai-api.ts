@@ -15,6 +15,7 @@ interface AIGenerateOptions {
   contextData?: any // For canvas context
   selectedComponentId?: string
   image?: string // Base64 data URI for reference image
+  chatHistory?: string // XML-formatted chat history context
 }
 
 // Model configuration
@@ -129,7 +130,7 @@ export function setContextProviderEnabled(id: string, enabled: boolean): void {
 }
 
 
-function buildSystemPrompt(generateParams: boolean, canvasContext?: string): string {
+function buildSystemPrompt(generateParams: boolean, canvasContext?: string, chatHistory?: string): string {
   const contexts = getEnabledContextProviders()
     .map(p => p.getContext())
     .filter(c => c.length > 0)
@@ -139,6 +140,9 @@ function buildSystemPrompt(generateParams: boolean, canvasContext?: string): str
   let enhancedContexts = `<context_providers>\n${contexts}\n</context_providers>`
   if (canvasContext) {
     enhancedContexts += `\n\n<canvas_context>\n${canvasContext}\n</canvas_context>`
+  }
+  if (chatHistory) {
+    enhancedContexts = `${chatHistory}\n\n${enhancedContexts}`
   }
 
   const basePrompt = `
@@ -227,7 +231,7 @@ ${enhancedContexts}
 6. Assign results to output parameter variables
 7. Maintain tree structure when appropriate
 8. Use proper type coercion (rs.coerce functions)
-9. Provide a concise component description (1–2 sentences, ≤200 characters)
+9. Provide a clear, user-friendly component description (focus on what it does, not how)
 </requirements>
 
 ${generateParams ? `
@@ -257,9 +261,9 @@ function buildResponseContract(generateParams: boolean, userPrompt: string): str
 Output ONLY a single, valid JSON object. No prose, no markdown, no code fences.
 The JSON MUST have these fields:
 {
-  "reasoning": "Brief explanation of your approach",
-  "explanation": "<=50 words, with line breaks (use \n between short lines)",
-  "description": "1-2 sentences (<=200 chars) describing the component",
+  "reasoning": "Brief technical explanation of your approach (for internal use)",
+  "explanation": "User-friendly explanation in plain language. What the solution does in 2-3 clear sentences. Avoid technical jargon.",
+  "description": "Simple summary of what was done (e.g., 'Added filtering by height' or 'Created dynamic building generator')",
   "code": "The complete Python 2.7 code"${generateParams ? ',\n  "param_definitions": [\n    {"type": "input", "name": "param_name", "description": "<=120 chars, what it does", "typehint": "str/int/float/etc", "access": "item/list/tree", "optional": true/false},\n    {"type": "output", "name": "result", "description": "<=120 chars, what it outputs"}\n  ]' : ''}
 }
 </response_format>
@@ -270,7 +274,7 @@ ${finalBlock}
 // Removed buildJsonSchema - we're using simple JSON mode instead of strict schemas
 
 export async function generateWithAI(options: AIGenerateOptions): Promise<AIResponse> {
-  const { prompt, apiKey, state, generateParams, model = 'gpt-5-mini', contextData, selectedComponentId, image } = options
+  const { prompt, apiKey, state, generateParams, model = 'gpt-5-mini', contextData, selectedComponentId, image, chatHistory } = options
   
   // Validate model
   const modelConfig = MODEL_CONFIG[model as ModelId] || MODEL_CONFIG['gpt-5-mini']
@@ -294,8 +298,30 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
 
   // Generate canvas context if available and enabled
   let canvasContext = ''
-  if (contextData && selectedComponentId) {
-    // Import context utilities dynamically
+  
+  // Check if manual AI context is enabled and available
+  const store = typeof window !== 'undefined' ? (window as any).appStore?.getState?.() : null
+  const useManualContext = store?.aiManualContextEnabled && store?.aiSelectedGuids?.length > 0
+  
+  if (useManualContext && contextData) {
+    // Use manual context selection with user-defined upstream/downstream levels
+    const { processContextData, generateMarkdownTemplate } = await import('@/lib/context-utils')
+    const { computeContextFromSelection } = await import('@/lib/graph-traversal')
+    const processedContext = processContextData(contextData)
+    
+    if (processedContext) {
+      const contextResult = computeContextFromSelection(
+        contextData,
+        store.aiSelectedGuids,
+        store.aiUpstreamLevels || 2,
+        store.aiDownstreamLevels || 1
+      )
+      
+      const detailLevel = model === 'gpt-5' ? 'detailed' : 'standard'
+      canvasContext = generateMarkdownTemplate(contextResult, detailLevel)
+    }
+  } else if (contextData && selectedComponentId) {
+    // Fall back to automatic context (original behavior)
     const { processContextData, generateMarkdownTemplate, sliceProcessedContextByComponents } = await import('@/lib/context-utils')
     const { computeContextFromSelection } = await import('@/lib/graph-traversal')
     const processedContext = processContextData(contextData)
@@ -335,7 +361,7 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
   }
 
   // GPT-5 uses the responses API
-  const fullPrompt = buildSystemPrompt(generateParams, canvasContext) 
+  const fullPrompt = buildSystemPrompt(generateParams, canvasContext, chatHistory) 
     + '\n\n' + userMessage
     + '\n\n' + buildResponseContract(generateParams, prompt)
   

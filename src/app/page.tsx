@@ -8,6 +8,7 @@ import AIPanel from '@/components/AIPanel'
 import ModelSelector from '@/components/ModelSelector'
 import ContextPanel from '@/components/ContextPanel'
 import DocsPanel from '@/components/DocsPanel'
+import StatusBar from '@/components/StatusBar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useAppStore } from '@/store/app-store'
 import { useClientInit } from '@/lib/use-client-init'
@@ -122,6 +123,10 @@ export default function Home() {
   const runtimeIssues = useAppStore((state) => state.runtimeIssues)
   const setAiPrompt = useAppStore((state) => state.setAiPrompt)
   const generateWithAI = useAppStore((state) => state.generateWithAI)
+  const selectedComponentId = useAppStore((state) => state.selectedComponentId)
+  const chatHistory = useAppStore((state) => 
+    selectedComponentId ? state.getChatHistory(selectedComponentId) : []
+  )
   const selectedRec = useAppStore((s) => s.selectedComponentId ? s.componentsById[s.selectedComponentId] : undefined)
   const [showErrorPanel, setShowErrorPanel] = useState(false)
   const hasIssues = !!runtimeIssues && (((runtimeIssues.errors || []).length + (runtimeIssues.warnings || []).length + (runtimeIssues.remarks || []).length) > 0)
@@ -143,6 +148,9 @@ export default function Home() {
 
   return (
     <div className="space-y-4">
+      {/* Status Bar - Disabled to prevent UI jumping */}
+      {/* <StatusBar /> */}
+      
       {/* Tab Content */}
       {activeTab === 'coding' ? (
         <>
@@ -262,7 +270,7 @@ export default function Home() {
 
           <div className="card">
             <div className="card-header bg-white p-4 border-b">
-              <div className="relative flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <h3 className="flex items-center text-lg font-semibold mb-0">
                   <span className="relative inline-flex items-center">
                     <i className="fas fa-robot text-blue-600 mr-2"></i>
@@ -293,7 +301,6 @@ export default function Home() {
                     className="w-32 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                {/* Bubble is anchored to the icon above */}
               </div>
             </div>
             <div className="p-4">

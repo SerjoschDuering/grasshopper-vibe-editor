@@ -9,6 +9,7 @@ export function useClientInit() {
     const savedCollapsed = localStorage.getItem('collapsedCards')
     const savedAiModel = localStorage.getItem('aiModel')
     const savedTheme = localStorage.getItem('theme')
+    const savedActiveTab = localStorage.getItem('vibecode_activeTab')
     
     const store = useAppStore.getState()
     if (savedAutoFetch === 'true') {
@@ -47,6 +48,11 @@ export function useClientInit() {
           document.documentElement.classList.add('theme-' + savedTheme)
         }
       } catch {}
+    }
+
+    if (savedActiveTab && ['coding', 'context', 'docs'].includes(savedActiveTab)) {
+      // Update activeTab without triggering localStorage save to avoid loops
+      useAppStore.setState({ activeTab: savedActiveTab as any })
     }
   }, [])
 }

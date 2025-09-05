@@ -1,10 +1,43 @@
 'use client'
 
 import { useAppStore } from '@/store/app-store'
+import { useState, useEffect } from 'react'
 
 export default function AppHeader() {
   const activeTab = useAppStore(state => state.activeTab)
   const setActiveTab = useAppStore(state => state.setActiveTab)
+  
+  // Prevent hydration mismatch by deferring dynamic styles until after mount
+  const [isMounted, setIsMounted] = useState(false)
+  
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+  
+  // Create a function to get button styles that ensures consistent rendering
+  const getButtonStyles = (tabName: string) => {
+    if (!isMounted) {
+      // Return neutral styles for SSR/initial hydration
+      return {
+        fontSize: '15px',
+        color: 'var(--text-muted)',
+        backgroundColor: 'transparent',
+        borderRadius: 'var(--border-radius)',
+        fontWeight: '500',
+        boxShadow: 'none'
+      }
+    }
+    
+    const isActive = activeTab === tabName
+    return {
+      fontSize: '15px',
+      color: isActive ? 'var(--primary-color)' : 'var(--text-muted)',
+      backgroundColor: isActive ? 'var(--card-bg)' : 'transparent',
+      borderRadius: 'var(--border-radius)',
+      fontWeight: isActive ? '600' : '500',
+      boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+    }
+  }
   
   return (
     <div className="app-header">
@@ -20,18 +53,8 @@ export default function AppHeader() {
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
       }}>
         <button
-          className={`
-            flex items-center px-6 py-3 font-medium transition-all duration-200
-            ${activeTab === 'coding' ? 'shadow-sm' : 'hover:bg-white hover:bg-opacity-50'}
-          `}
-          style={{
-            fontSize: '15px',
-            color: activeTab === 'coding' ? 'var(--primary-color)' : 'var(--text-muted)',
-            backgroundColor: activeTab === 'coding' ? 'var(--card-bg)' : 'transparent',
-            borderRadius: 'var(--border-radius)',
-            fontWeight: activeTab === 'coding' ? '600' : '500',
-            boxShadow: activeTab === 'coding' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-          }}
+          className="flex items-center px-6 py-3 font-medium transition-all duration-200 hover:bg-white hover:bg-opacity-50"
+          style={getButtonStyles('coding')}
           onClick={() => setActiveTab('coding')}
         >
           <i className="fas fa-code mr-2.5"></i>
@@ -39,18 +62,8 @@ export default function AppHeader() {
         </button>
         
         <button
-          className={`
-            flex items-center px-6 py-3 font-medium transition-all duration-200
-            ${activeTab === 'context' ? 'shadow-sm' : 'hover:bg-white hover:bg-opacity-50'}
-          `}
-          style={{
-            fontSize: '15px',
-            color: activeTab === 'context' ? 'var(--primary-color)' : 'var(--text-muted)',
-            backgroundColor: activeTab === 'context' ? 'var(--card-bg)' : 'transparent',
-            borderRadius: 'var(--border-radius)',
-            fontWeight: activeTab === 'context' ? '600' : '500',
-            boxShadow: activeTab === 'context' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-          }}
+          className="flex items-center px-6 py-3 font-medium transition-all duration-200 hover:bg-white hover:bg-opacity-50"
+          style={getButtonStyles('context')}
           onClick={() => setActiveTab('context')}
         >
           <i className="fas fa-project-diagram mr-2.5"></i>
@@ -58,18 +71,8 @@ export default function AppHeader() {
         </button>
 
         <button
-          className={`
-            flex items-center px-6 py-3 font-medium transition-all duration-200
-            ${activeTab === 'docs' ? 'shadow-sm' : 'hover:bg-white hover:bg-opacity-50'}
-          `}
-          style={{
-            fontSize: '15px',
-            color: activeTab === 'docs' ? 'var(--primary-color)' : 'var(--text-muted)',
-            backgroundColor: activeTab === 'docs' ? 'var(--card-bg)' : 'transparent',
-            borderRadius: 'var(--border-radius)',
-            fontWeight: activeTab === 'docs' ? '600' : '500',
-            boxShadow: activeTab === 'docs' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
-          }}
+          className="flex items-center px-6 py-3 font-medium transition-all duration-200 hover:bg-white hover:bg-opacity-50"
+          style={getButtonStyles('docs')}
           onClick={() => setActiveTab('docs')}
         >
           <i className="fas fa-book mr-2.5"></i>

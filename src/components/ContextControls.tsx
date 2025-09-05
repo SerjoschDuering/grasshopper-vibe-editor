@@ -25,7 +25,12 @@ export default function ContextControls() {
   return (<div className="card p-3">
     <div className="space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
-        <button onClick={fetchContext} disabled={contextLoading} className="btn btn-primary btn-sm">
+        <button 
+          onClick={fetchContext} 
+          disabled={contextLoading} 
+          className="btn btn-primary btn-sm"
+          style={{ minWidth: '120px' }}
+        >
           {contextLoading ? (<><i className="fas fa-spinner fa-spin mr-1"></i>Loading...</>) : (<><i className="fas fa-sitemap mr-1"></i>Get Context</>)}
         </button>
         <div className="flex items-center gap-2 px-2 py-1 rounded border border-gray-200 bg-white/60">

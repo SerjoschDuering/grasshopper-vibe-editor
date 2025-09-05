@@ -26,24 +26,13 @@ export function getUpstreamComponents(
   const component = processedContext.componentMap[componentGuid]
   if (!component) return result
   
-  // Find all components that output to this one, resolving param→component
-  for (const connection of processedContext.connections) {
-    // Resolve target component from target param GUID
-    const targetParam = (processedContext as any).paramMap
-      ? (processedContext as any).paramMap[connection.to]
-      : processedContext.params.find(p => p.instanceGuid === connection.to)
-    const targetCompGuid = targetParam && targetParam.componentGuid ? targetParam.componentGuid : null
-    if (targetCompGuid !== componentGuid) continue
-
-    // Resolve source component from source param GUID
-    const sourceParam = (processedContext as any).paramMap
-      ? (processedContext as any).paramMap[connection.from]
-      : processedContext.params.find(p => p.instanceGuid === connection.from)
-    const sourceComponentGuid = sourceParam && sourceParam.componentGuid ? sourceParam.componentGuid : null
-
-    if (sourceComponentGuid && !visited.has(sourceComponentGuid)) {
+  // Find all components that feed into this one by checking which components have this one in their adjacency list
+  const adjacencyList = (processedContext as any).adjacencyList || {}
+  
+  for (const [sourceGuid, targets] of Object.entries(adjacencyList)) {
+    if ((targets as string[]).includes(componentGuid) && !visited.has(sourceGuid)) {
       const upstream = getUpstreamComponents(
-        sourceComponentGuid,
+        sourceGuid,
         levels - 1,
         processedContext,
         visited
@@ -81,24 +70,13 @@ export function getDownstreamComponents(
   const component = processedContext.componentMap[componentGuid]
   if (!component) return result
   
-  // Find all components that receive output from this one, resolving param→component
-  for (const connection of processedContext.connections) {
-    // Resolve source component from source param GUID
-    const sourceParam = (processedContext as any).paramMap
-      ? (processedContext as any).paramMap[connection.from]
-      : processedContext.params.find(p => p.instanceGuid === connection.from)
-    const sourceCompGuid = sourceParam && sourceParam.componentGuid ? sourceParam.componentGuid : null
-    if (sourceCompGuid !== componentGuid) continue
-
-    // Resolve target component from target param GUID
-    const targetParam = (processedContext as any).paramMap
-      ? (processedContext as any).paramMap[connection.to]
-      : processedContext.params.find(p => p.instanceGuid === connection.to)
-    const targetComponentGuid = targetParam && targetParam.componentGuid ? targetParam.componentGuid : null
-    
-    if (targetComponentGuid && !visited.has(targetComponentGuid)) {
+  // Use the adjacencyList which already has component-to-component connections
+  const downstreamComponents = (processedContext as any).adjacencyList?.[componentGuid] || []
+  
+  for (const downstreamGuid of downstreamComponents) {
+    if (!visited.has(downstreamGuid)) {
       const downstream = getDownstreamComponents(
-        targetComponentGuid,
+        downstreamGuid,
         levels - 1,
         processedContext,
         visited

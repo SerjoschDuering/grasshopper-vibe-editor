@@ -1,46 +1,109 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This document guides AI code assistants when working in this repository. It summarizes the architecture, directory layout, key files, and coding rules that are easy to miss.
 
 ## Project Overview
 
-VibeCode Grasshopper Editor is a web-based code editor for Grasshopper Python components that provides real-time synchronization between a browser interface and Grasshopper. It enables AI-assisted code generation for IronPython/Python 2.7 scripts.
+VibeCode Grasshopper Editor is a desktop app (Electron + Next.js) for editing Grasshopper GHPython components with real-time sync to Grasshopper. It enables AI-assisted code generation for IronPython/Python 2.7 scripts and context-aware assistance based on the Grasshopper canvas.
 
-## Architecture
+## High-level Architecture
 
-The project consists of:
-- **grasshopper_vibeCoder.html**: Single-file web application that serves as the editor interface
-- **gh_client_snippet.gh**: Grasshopper file containing the Python server component
-- **Server**: Runs on `http://127.0.0.1:9998` inside Grasshopper to handle communication
+- Electron shell launches the Next.js UI and provides a packaged desktop experience.
+- Next.js/React UI (TypeScript, Tailwind) hosts the code editor, AI controls, context viewers, and configuration panels.
+- A local HTTP server inside Grasshopper (`ghserver.py`) exposes endpoints for reading/writing component code, parameters, and canvas context.
+- Optional build artifacts for web export (`out/`) and desktop installers (`dist-electron/`).
 
-## Key Technical Details
+## Directory Overview (selected)
 
-### Editor
-- Uses **Ace Editor** for code editing (integrated via CDN)
-- Bootstrap 5.3.3 for UI components
-- Font Awesome for icons
-- No build process or package.json - pure HTML/CSS/JavaScript
+```text
+/
+├─ electron/
+│  └─ main.js                Electron main process (create windows, load Next app)
+├─ src/
+│  ├─ app/
+│  │  ├─ layout.tsx          App shell
+│  │  └─ page.tsx            Main application page
+│  ├─ components/
+│  │  ├─ AIPanel.tsx         AI prompt/completion controls
+│  │  ├─ AppHeader.tsx       Top navigation/header
+│  │  ├─ CodeEditor.tsx      Code editor for GHPython scripts
+│  │  ├─ ConfigPanel.tsx     Settings & configuration UI
+│  │  ├─ ContextControls.tsx Context provider toggles and actions
+│  │  ├─ ContextPanel.tsx    Canvas context data viewer
+│  │  ├─ ContextViewer.tsx   Rendered context display
+│  │  ├─ DocsPanel.tsx       Inline docs/help panel
+│  │  ├─ ErrorBoundary.tsx   UI error containment
+│  │  ├─ GraphicalView.tsx   Visual preview / future graph UI
+│  │  ├─ InputParameters.tsx Input parameter editor
+│  │  ├─ ModelSelector.tsx   Model selection (GPT-5 variants)
+│  │  ├─ OutputParameters.tsx Output parameter editor
+│  │  ├─ ParameterCard.tsx   Parameter card UI
+│  │  ├─ StatusBar.tsx       Footer/status
+│  │  └─ TabNavigation.tsx   Section tabs
+│  ├─ lib/
+│  │  ├─ grasshopper-api.ts  Client for GH server HTTP endpoints
+│  │  ├─ openai-api.ts       OpenAI API integration
+│  │  ├─ context-*.ts        Context extraction/exporters (Markdown/JSON)
+│  │  ├─ graph-traversal.ts  Compute-order traversal helpers
+│  │  ├─ image-utils.ts      Image handling for AI context
+│  │  ├─ features.ts         Feature flags/toggles
+│  │  ├─ use-client-init.ts  Client bootstrapping & effects
+│  │  └─ types.ts            Shared type definitions
+│  └─ store/
+│     ├─ app-store.ts        Central state (Zustand) and slices wiring
+│     ├─ slices/             UI, settings, editor, component cache
+│     ├─ types.ts            Store-specific types
+│     └─ utils/              Helpers: storage, ids, revisions, parameters
+├─ ghserver.py               Grasshopper in-process HTTP server (:9998)
+├─ gh_client_snippet.gh      Example GH definition with server component
+├─ dist-electron/            Built installers (desktop distribution)
+├─ dist/, out/               Web build outputs
+├─ public/                   Static assets (images, docs)
+├─ next.config.js            Next.js config
+├─ tailwind.config.ts        Tailwind config
+├─ tsconfig.json             TypeScript config
+└─ package.json              Scripts and builder config
+```
 
-### Python Environment
-- **IMPORTANT**: All generated Python code must be **IronPython/Python 2.7 compatible**
-- **Never use f-strings** - use `.format()` or older string formatting
-- Runs inside Rhino/Grasshopper environment with access to `rhinoscriptsyntax` and Grasshopper APIs
+## Common Tasks
 
-### API Communication
-- RESTful API between web editor and Grasshopper server
-- CORS headers configured in server for file:// protocol access
-- Endpoints handle code synchronization and parameter management
+- Install deps: `npm install`
+- Dev (Electron + Next.js): `npm run electron:dev`
+- Dev (browser only): `npm run dev` → open `http://localhost:3000`
+- Build web: `npm run build`
+- Package desktop app: `npm run dist`
 
-## Development Workflow
+For end-to-end usage, see `README.md` (Getting Started, Troubleshooting).
 
-1. Open the Grasshopper file with the server component
-2. Ensure server toggle is set to "True" 
-3. Open `grasshopper_vibeCoder.html` directly in a browser (no local server needed)
-4. Select GHPython components in Grasshopper to edit them
+## Rules for AI-Generated GHPython Code
 
-## Testing
+- Target IronPython/Python 2.7.
+  - Do not use f-strings, type hints, or modern Python syntax.
+  - Prefer `"{}".format(...)` for string formatting.
+- Assume Rhino 7 + Grasshopper environment with `rhinoscriptsyntax` and GH APIs available.
+- Keep generated code readable and explicit; avoid clever one-liners.
+- When updating parameters, ensure consistency with the UI and server contract.
 
-No automated tests are present. Manual testing involves:
-- Opening the HTML file in a browser
-- Verifying connection to the Grasshopper server
-- Testing code synchronization between editor and Grasshopper
+## UI/Parameter Text Conventions
+
+- Write short, meaningful descriptions for each parameter and component.
+- Mirror parameter/component descriptions between the app and Grasshopper when round-tripping.
+- Parameter card titles in the UI should omit the "Input:"/"Output:" prefix; display just the name.
+
+## Frontend Code Guidelines (TypeScript/React)
+
+- Use clear, descriptive names; avoid `any` and unsafe casts.
+- Prefer early returns and shallow component trees; handle edge cases first.
+- Keep components focused; push shared logic into `src/lib/` or the store.
+- Match existing formatting; avoid drive-by refactors unrelated to your change.
+
+## Where Things Happen
+
+- GH communication: `src/lib/grasshopper-api.ts`
+- AI requests: `src/lib/openai-api.ts`
+- Context generation: `src/lib/context-*.ts`, `src/lib/graph-traversal.ts`
+- Global state: `src/store/app-store.ts` with slices in `src/store/slices/`
+- Desktop shell: `electron/main.js`
+- GH local server: `ghserver.py`
+
+If you add or move files, update this document and `README.md` accordingly.
