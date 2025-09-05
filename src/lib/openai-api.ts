@@ -305,20 +305,23 @@ export async function generateWithAI(options: AIGenerateOptions): Promise<AIResp
   
   if (useManualContext && contextData) {
     // Use manual context selection with user-defined upstream/downstream levels
-    const { processContextData, generateMarkdownTemplate } = await import('@/lib/context-utils')
+    const { processContextData, generateMarkdownTemplate, sliceProcessedContextByComponents } = await import('@/lib/context-utils')
     const { computeContextFromSelection } = await import('@/lib/graph-traversal')
     const processedContext = processContextData(contextData)
     
     if (processedContext) {
-      const contextResult = computeContextFromSelection(
-        contextData,
+      const contextGuids = computeContextFromSelection(
         store.aiSelectedGuids,
         store.aiUpstreamLevels || 2,
-        store.aiDownstreamLevels || 1
+        store.aiDownstreamLevels || 1,
+        processedContext
       )
       
+      // Slice context to relevant components
+      const slicedContext = sliceProcessedContextByComponents(processedContext, contextGuids)
+      
       const detailLevel = model === 'gpt-5' ? 'detailed' : 'standard'
-      canvasContext = generateMarkdownTemplate(contextResult, detailLevel)
+      canvasContext = generateMarkdownTemplate(slicedContext, detailLevel as any)
     }
   } else if (contextData && selectedComponentId) {
     // Fall back to automatic context (original behavior)
