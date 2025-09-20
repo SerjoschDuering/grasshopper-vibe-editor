@@ -34,9 +34,24 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
   ],
 
   setCode: (code) => {
-    // For now, just set the code directly
-    // The component-cache slice will handle draft management
+    // Update global code value
     set({ code })
+
+    // If a component is selected, also update its draft to mark it as dirty
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      // Safely access updateDraft from the component cache slice
+      const state = get() as any
+      const updateDraft = state.updateDraft
+
+      if (typeof updateDraft === 'function') {
+        try {
+          updateDraft(selectedId, (d: any) => ({ ...d, code }))
+        } catch (error) {
+          console.warn('Failed to update draft for code change:', error)
+        }
+      }
+    }
   },
 
   setTargetGuid: (guid) => {
@@ -54,6 +69,18 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
       optional: false
     }
     set(state => ({ inputs: [...state.inputs, newInput] }))
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => ({
+          ...d,
+          inputs: [...d.inputs, newInput]
+        }))
+      }
+    }
   },
 
   addOutput: () => {
@@ -64,9 +91,22 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
       description: ''
     }
     set(state => ({ outputs: [...state.outputs, newOutput] }))
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => ({
+          ...d,
+          outputs: [...d.outputs, newOutput]
+        }))
+      }
+    }
   },
 
   updateParameter: (p) => {
+    // Update the global state
     set(state => {
       if (p.kind === 'input') {
         return {
@@ -85,17 +125,63 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
         }
       }
     })
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => {
+          if (p.kind === 'input') {
+            return {
+              ...d,
+              inputs: d.inputs.map((inp: InputParameter) => inp.id === p.id ? p as InputParameter : inp)
+            }
+          } else {
+            // Prevent renaming default output in draft as well
+            if (isDefaultOutput(p) && 'name' in p) {
+              const existing = d.outputs.find((o: OutputParameter) => o.id === p.id)
+              if (existing && existing.name !== p.name) {
+                return d
+              }
+            }
+            return {
+              ...d,
+              outputs: d.outputs.map((out: OutputParameter) => out.id === p.id ? p as OutputParameter : out)
+            }
+          }
+        })
+      }
+    }
   },
 
   removeParameter: (id) => {
-    set(state => {
-      const param = [...state.inputs, ...state.outputs].find(p => p.id === id)
-      if (param && isDefaultOutput(param)) return state
-      return {
-        inputs: state.inputs.filter(p => p.id !== id),
-        outputs: state.outputs.filter(p => p.id !== id)
+    // Check if it's the default output before removing
+    const allParams = [...get().inputs, ...get().outputs]
+    const param = allParams.find(p => p.id === id)
+    if (param && isDefaultOutput(param)) return
+
+    set(state => ({
+      inputs: state.inputs.filter(p => p.id !== id),
+      outputs: state.outputs.filter(p => p.id !== id)
+    }))
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => {
+          const draftParam = [...d.inputs, ...d.outputs].find((p: Parameter) => p.id === id)
+          if (draftParam && isDefaultOutput(draftParam)) return d
+          return {
+            ...d,
+            inputs: d.inputs.filter((p: InputParameter) => p.id !== id),
+            outputs: d.outputs.filter((p: OutputParameter) => p.id !== id)
+          }
+        })
       }
-    })
+    }
   },
 
   reorderInputs: (activeId, overId) => {
@@ -110,16 +196,36 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
 
       return { inputs: reorderedInputs }
     })
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => {
+          const fromIndex = d.inputs.findIndex((p: InputParameter) => p.id === activeId)
+          const toIndex = d.inputs.findIndex((p: InputParameter) => p.id === overId)
+          if (fromIndex === -1 || toIndex === -1) return d
+
+          const reorderedInputs = [...d.inputs]
+          const [moved] = reorderedInputs.splice(fromIndex, 1)
+          reorderedInputs.splice(toIndex, 0, moved)
+
+          return { ...d, inputs: reorderedInputs }
+        })
+      }
+    }
   },
 
   reorderOutputs: (activeId, overId) => {
-    set(state => {
-      // Don't allow reordering if either is the default output
-      const activeParam = state.outputs.find(p => p.id === activeId)
-      const overParam = state.outputs.find(p => p.id === overId)
-      if (!activeParam || !overParam) return state
-      if (isDefaultOutput(activeParam) || isDefaultOutput(overParam)) return state
+    // Check if either is default output before any changes
+    const outputs = get().outputs
+    const activeParam = outputs.find(p => p.id === activeId)
+    const overParam = outputs.find(p => p.id === overId)
+    if (!activeParam || !overParam) return
+    if (isDefaultOutput(activeParam) || isDefaultOutput(overParam)) return
 
+    set(state => {
       const fromIndex = state.outputs.findIndex(p => p.id === activeId)
       const toIndex = state.outputs.findIndex(p => p.id === overId)
       if (fromIndex === -1 || toIndex === -1) return state
@@ -130,5 +236,30 @@ export const createEditorSlice: SliceCreator<EditorSlice> = (set, get) => ({
 
       return { outputs: reorderedOutputs }
     })
+
+    // Also update the draft if a component is selected
+    const selectedId = get().selectedComponentId
+    if (selectedId) {
+      const updateDraft = (get() as any).updateDraft
+      if (typeof updateDraft === 'function') {
+        updateDraft(selectedId, (d: any) => {
+          // Don't allow reordering if either is the default output in draft
+          const activeParam = d.outputs.find((p: OutputParameter) => p.id === activeId)
+          const overParam = d.outputs.find((p: OutputParameter) => p.id === overId)
+          if (!activeParam || !overParam) return d
+          if (isDefaultOutput(activeParam) || isDefaultOutput(overParam)) return d
+
+          const fromIndex = d.outputs.findIndex((p: OutputParameter) => p.id === activeId)
+          const toIndex = d.outputs.findIndex((p: OutputParameter) => p.id === overId)
+          if (fromIndex === -1 || toIndex === -1) return d
+
+          const reorderedOutputs = [...d.outputs]
+          const [moved] = reorderedOutputs.splice(fromIndex, 1)
+          reorderedOutputs.splice(toIndex, 0, moved)
+
+          return { ...d, outputs: reorderedOutputs }
+        })
+      }
+    }
   }
 })

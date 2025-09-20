@@ -156,10 +156,14 @@ export const useAppStore = create<AppState>((set, get, api) => ({
           fetchedAt: Date.now()
         }
 
+        // CRITICAL: Always fetch context FIRST to get fresh runtime issues
+        // This must happen even when code hasn't changed, because runtime errors can change
+        get().fetchContext()
+
         const current = get().componentsById[id]?.snapshot
         if (current && current.serverRevision === serverRevision && get().selectedComponentId === id) {
           if (process.env.NODE_ENV !== 'production') {
-            try { console.debug('[GH] poll: no change, skip') } catch {}
+            try { console.debug('[GH] poll: no code change, but runtime issues updated') } catch {}
           }
           return
         }
@@ -167,10 +171,10 @@ export const useAppStore = create<AppState>((set, get, api) => ({
         get().receiveServerSnapshot(snap)
 
         if (!get().autoFetch) {
-          get().showStatus({ 
-            message: 'Successfully fetched from Grasshopper', 
+          get().showStatus({
+            message: 'Successfully fetched from Grasshopper',
             type: 'success',
-            duration: 3000 
+            duration: 3000
           })
         }
       } else if ((response as any).status === 'none_selected') {
@@ -473,10 +477,31 @@ export const useAppStore = create<AppState>((set, get, api) => ({
       const data = await response.json()
       
       if (data.status === 'success') {
-        set({ 
+        // Extract runtime issues for the selected component (if any)
+        // IMPORTANT: Always set runtime issues, even if empty, to clear old errors
+        let runtimeIssues = { errors: [], warnings: [], remarks: [] }
+        try {
+          const selectedId = get().selectedComponentId
+          if (selectedId && Array.isArray(data.components)) {
+            const comp = data.components.find((c: any) => c.instanceGuid === selectedId)
+            if (comp && comp.runtime) {
+              const errs = Array.isArray(comp.runtime.errors) ? comp.runtime.errors : []
+              const warns = Array.isArray(comp.runtime.warnings) ? comp.runtime.warnings : []
+              const rems = Array.isArray(comp.runtime.remarks) ? comp.runtime.remarks : []
+              runtimeIssues = { errors: errs, warnings: warns, remarks: rems }
+            }
+            // If component has no runtime data, errors have been resolved
+            // The empty arrays will clear the UI
+          }
+        } catch (e) {
+          console.warn('Failed to extract runtime issues:', e)
+        }
+
+        set({
           contextData: data,
           contextLoading: false,
-          contextError: null
+          contextError: null,
+          runtimeIssues
         })
       } else {
         throw new Error(data.result || 'Failed to fetch context')

@@ -123,3 +123,14 @@ For end-to-end usage, see `README.md` (Getting Started, Troubleshooting).
 - GH local server: `ghserver.py`
 
 If you add or move files, update this document and `README.md` accordingly.
+
+## Open Issues / TODOs
+
+- Strengthen I/O parameter generation prompt
+  - Ensure prompts reliably produce both inputs and outputs with concise, meaningful descriptions.
+  - Consider a stricter schema-first template (explicit sections for Inputs/Outputs) and post-checks that reject responses missing either section.
+  - Likely touchpoints: `src/lib/openai-api.ts` (prompt templates), `src/store/ai-implementation.ts` (result handling), `src/components/{InputParameters,OutputParameters}.tsx`.
+
+- Show UI to sync code changes back to Grasshopper after manual edits/paste
+  - When editor content changes and diverges from GH, surface a non-intrusive CTA (e.g., banner/button) to "Send changes to GH".
+  - Likely touchpoints: `src/components/CodeEditor.tsx` (change detection/UI), `src/lib/grasshopper-api.ts` and store actions for apply/sync.

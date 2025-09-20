@@ -92,16 +92,36 @@ export const createChatHistorySlice: SliceCreator<ChatHistorySlice> = (set, get)
 
       // IMPORTANT: Update the code in the editor
       const selectedId = state.selectedComponentId
-      if (selectedId === componentId && state.setCode) {
-        console.log(`[Chat History] Setting code for component ${componentId}`)
-        state.setCode(generatedCode)
-        
-        // Also update draft if needed
-        if (state.updateDraft) {
-          state.updateDraft(componentId, (draft) => ({
-            ...draft,
-            code: generatedCode
-          }))
+      if (state.setCode) {
+        // Always update code if this is for the selected component
+        // OR if we're adding an entry for a component (bug fix scenario)
+        if (selectedId === componentId) {
+          console.log(`[Chat History] Setting code for selected component ${componentId}`)
+          state.setCode(generatedCode)
+
+          // Also update draft if needed
+          if (state.updateDraft) {
+            state.updateDraft(componentId, (draft) => ({
+              ...draft,
+              code: generatedCode
+            }))
+          }
+        } else {
+          console.log(`[Chat History] Component mismatch - selected: ${selectedId}, entry for: ${componentId}`)
+          // For bug fixes, we still want to update the code even if there's a mismatch
+          // This can happen when fixing runtime errors
+          if (state.aiPrompt && state.aiPrompt.includes('Fix the')) {
+            console.log(`[Chat History] Bug fix detected, updating code anyway`)
+            state.setCode(generatedCode)
+
+            // Try to update the draft for the component with the issue
+            if (state.updateDraft && componentId) {
+              state.updateDraft(componentId, (draft) => ({
+                ...draft,
+                code: generatedCode
+              }))
+            }
+          }
         }
       }
 

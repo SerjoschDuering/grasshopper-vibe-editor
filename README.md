@@ -27,7 +27,7 @@ Fine-tune what the LLM sees while working on the currently selected component.
 - Manual selection mode to include a specific set/group of components
 - Dual preview: switch between a lightweight Canvas graph and a Markdown summary
 - potentially interesting for workflows like “consolidate these components into a single Python script”
-- 
+  
 ![Context engineering and Chat history](docs/context-history.jpg)
 
 #### Chat History (per component)

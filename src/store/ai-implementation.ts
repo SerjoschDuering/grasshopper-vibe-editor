@@ -165,26 +165,75 @@ export const generateWithAIImplementation = async (get: any, set: any) => {
         name: 'output',
         description: 'Default output'
       }
-      
+
       const outputsCombined = [defaultOutput, ...newOutputs]
-      const selectedId = get().selectedComponentId
-      if (selectedId) {
-        get().updateDraft(selectedId, (d: any) => ({
-          ...d,
-          inputs: newInputs,
-          outputs: outputsCombined
-        }))
-      } else {
-        set({
-          inputs: newInputs,
-          outputs: outputsCombined
-        })
+
+      // Update parameters through the proper store functions
+      // First, clear existing parameters (except default output)
+      const currentInputs = get().inputs
+      const currentOutputs = get().outputs
+
+      // Clear existing inputs
+      for (const input of currentInputs) {
+        get().removeParameter(input.id)
+      }
+
+      // Clear non-default outputs
+      for (const output of currentOutputs) {
+        if (output.name.toLowerCase() !== 'output') {
+          get().removeParameter(output.id)
+        }
+      }
+
+      // Add new inputs
+      for (const input of newInputs) {
+        // Use a more direct approach to add the input with specific properties
+        const addedInput = {
+          id: input.id,
+          kind: 'input' as const,
+          name: input.name,
+          description: input.description,
+          typehint: input.typehint,
+          access: input.access,
+          optional: input.optional
+        }
+        set((state: any) => ({ inputs: [...state.inputs, addedInput] }))
+
+        // Also update draft if component selected
+        const selectedId = get().selectedComponentId
+        if (selectedId && get().updateDraft) {
+          get().updateDraft(selectedId, (d: any) => ({
+            ...d,
+            inputs: [...(d.inputs || []), addedInput]
+          }))
+        }
+      }
+
+      // Add new outputs (skip default as it already exists)
+      for (const output of newOutputs) {
+        const addedOutput = {
+          id: output.id,
+          kind: 'output' as const,
+          name: output.name,
+          description: output.description
+        }
+        set((state: any) => ({ outputs: [...state.outputs, addedOutput] }))
+
+        // Also update draft if component selected
+        const selectedId = get().selectedComponentId
+        if (selectedId && get().updateDraft) {
+          get().updateDraft(selectedId, (d: any) => ({
+            ...d,
+            outputs: [...(d.outputs || []), addedOutput]
+          }))
+        }
       }
     }
     
     // Save chat history entry for this component
     // IMPORTANT: The new addChatEntry will also update the code in the editor
     if (selectedId) {
+      console.log('[AI] Adding chat entry for component:', selectedId)
       get().addChatEntry(
         selectedId,
         state.aiPrompt,
@@ -195,8 +244,17 @@ export const generateWithAIImplementation = async (get: any, set: any) => {
           description: result.description
         }
       )
+
+      // CRITICAL: Always ensure code is updated even if chat entry logic fails
+      // This fixes the bug where AI-generated fixes weren't being applied
+      const currentCode = get().code
+      if (currentCode !== codeFromAI) {
+        console.log('[AI] Ensuring code update after chat entry')
+        get().setCode(codeFromAI)
+      }
     } else {
       // If no component selected, still update the code
+      console.log('[AI] No component selected, updating code directly')
       get().setCode(codeFromAI)
     }
     
