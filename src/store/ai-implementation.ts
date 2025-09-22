@@ -84,46 +84,32 @@ export const generateWithAIImplementation = async (get: any, set: any) => {
       chatHistory: chatContext // Pass chat history to AI
     })
     
-    // Inject minimal footer to persist component description inside GHPython before updating editor code
+    // DISABLED: Description injection was causing code truncation issues
+    // Simply use the code as-is from the AI without any modifications
     let codeFromAI = result.code || ''
-    try {
-      const startMarker = '# --- VibeCode: auto-apply component description (begin)'
-      const endMarker = '# --- VibeCode: auto-apply component description (end)'
-      const desc = (result.description || '').trim()
-      const pyDesc = JSON.stringify(desc)
 
-      // 1) Replace any existing ghenv.Component.Description = "..." occurrences
-      //    Handles both single and double quoted strings conservatively
-      const descAssignRegex = /(ghenv\.Component\.Description\s*=\s*)(["'])(?:[^"'\\]|\\.|\n)*?\2/g
-      const hasExistingDescAssignment = descAssignRegex.test(codeFromAI)
-      if (desc.length > 0 && hasExistingDescAssignment) {
-        // Reset regex pointer before replace
-        descAssignRegex.lastIndex = 0
-        codeFromAI = codeFromAI.replace(descAssignRegex, '$1' + pyDesc)
-      } else {
-        // 2) If a VibeCode marker block exists, update inside it
-        const startIdx = codeFromAI.indexOf(startMarker)
-        const endIdx = codeFromAI.indexOf(endMarker)
-        if (desc.length > 0 && startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-          const block = codeFromAI.slice(startIdx, endIdx)
-          const updatedBlock = block.replace(descAssignRegex, '$1' + pyDesc)
-          codeFromAI = codeFromAI.slice(0, startIdx) + updatedBlock + codeFromAI.slice(endIdx)
-        } else if (desc.length > 0) {
-          // 3) Otherwise append a fresh minimal block
-          const footer = [
-            '',
-            startMarker,
-            'try:',
-            '    ghenv.Component.Description = ' + pyDesc,
-            'except:',
-            '    pass',
-            endMarker,
-            ''
-          ].join('\n')
-          codeFromAI = (codeFromAI || '').replace(/\s+$/, '') + footer
+    // Optional: If you want to keep the description feature but make it safer,
+    // uncomment the following simplified version:
+    /*
+    try {
+      const desc = (result.description || '').trim()
+      if (desc.length > 0) {
+        // Only append description if code doesn't already have one
+        if (!codeFromAI.includes('ghenv.Component.Description')) {
+          const footer = `
+
+# Set component description
+try:
+    ghenv.Component.Description = ${JSON.stringify(desc)}
+except:
+    pass`
+          codeFromAI = codeFromAI + footer
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to add description footer:', err)
+    }
+    */
     
     // Save AI explanation and component description (code will be set by addChatEntry)
     set({ aiExplanation: result.explanation, aiComponentDescription: result.description })
@@ -200,7 +186,7 @@ export const generateWithAIImplementation = async (get: any, set: any) => {
         set((state: any) => ({ inputs: [...state.inputs, addedInput] }))
 
         // Also update draft if component selected
-        const selectedId = get().selectedComponentId
+        // Use the captured selectedId from the start of generation
         if (selectedId && get().updateDraft) {
           get().updateDraft(selectedId, (d: any) => ({
             ...d,
@@ -220,7 +206,7 @@ export const generateWithAIImplementation = async (get: any, set: any) => {
         set((state: any) => ({ outputs: [...state.outputs, addedOutput] }))
 
         // Also update draft if component selected
-        const selectedId = get().selectedComponentId
+        // Use the captured selectedId from the start of generation
         if (selectedId && get().updateDraft) {
           get().updateDraft(selectedId, (d: any) => ({
             ...d,
