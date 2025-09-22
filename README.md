@@ -59,9 +59,9 @@ Translates your entire Grasshopper definition into LLM-friendly formats (Markdow
 
 ### Option 1: Desktop App (Recommended)
 1. **Download the installer** for your OS from Releases or the `dist-electron` folder:
-   - macOS (Apple Silicon): `VibeCode Grasshopper Editor-0.1.0-arm64.dmg`
+   - macOS (Apple Silicon M1/M2/M3): `VibeCode Grasshopper Editor-0.1.0-arm64.dmg`
    - macOS (Intel): `VibeCode Grasshopper Editor-0.1.0.dmg`
-   - Windows 10/11: `VibeCode Grasshopper Editor Setup 0.1.0.exe`
+   - Windows: Currently unavailable - please build from source (see Development section below)
    - Linux (AppImage): `VibeCode Grasshopper Editor-0.1.0.AppImage`
 2. **Install and launch** VibeCode.
 3. In Grasshopper, open `gh_client_snippet.gh` and set the server toggle to "True".
